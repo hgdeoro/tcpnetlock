@@ -9,13 +9,25 @@ from tcpnetlock import utils
 """
 This implement a very simple network lock server based on just TCP.
 
-The current implementation:
+The server listen for connections, reads the socket for a '\n' terminated line.
+The received string is used as lock name.
 
-    1. SERVER accept connection
-    2. CLIENT send the string 'lock-name\n'
+If the lock is granted, it is valid until the client release it, or until the TCP connection is closed.
+
+If the lock can't be granted, a response is sent to the client and the TCP connection is closed.
+
+
+Detail of the current implementation:
+
+    1. SERVER accept TCP connection
+    2. CLIENT send the lock name (utf-8 encoded), like: 'lock-name\n'
     3. SERVER tries to acquire the lock
-        - if lock is acquired, returns 'ok\n' to the client and the TCP connections is KEPT OPEN
-        - if lock is NOT acquired, returns 'err\n' to the client and the TCP connection is CLOSED
+        a. if lock was granted, returns 'ok\n' to the client and the TCP connections is KEPT OPEN
+            - the LOCK remains granted until:
+               + the client release it, sending 'release\n' to the server (and the TCP connection is CLOSED)
+               + the client closes the TCP connection
+               + for some reason the TCP connection is lost
+        b. if lock was NOT granted, returns 'failed\n' to the client and the TCP connection is immediately CLOSED
 """
 
 logger = logging.getLogger(__name__)
