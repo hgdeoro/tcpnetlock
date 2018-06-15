@@ -14,45 +14,52 @@ class _TemporalLockClient:
     of the real client.
     """
 
-    def __init__(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def __init__(self, host='localhost', port=9999):
+        self._host = host
+        self._port = port
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    @staticmethod
+    def _assert_response(response, valid_responses):
+        assert response in valid_responses, f"Invalid response: '{response}'. Valid responses: {valid_responses}"
 
     def _send(self, message):
-        self.socket.send((message + '\n').encode())
+        self._socket.send((message + '\n').encode())
+
+    def _read_response(self, valid_responses):
+        response = utils.get_line(self._socket)
+        self._assert_response(response, valid_responses)
+        return response
 
     def connect(self):
-        self.socket.connect(("localhost", 9999))
+        logger.info("Connecting to '%s:%s'...", self._host, self._port)
+        self._socket.connect((self._host, self._port))
 
     def lock(self, name):
-        logger.info("Trying to acquire lock '%s'", name)
+        logger.info("Trying to acquire lock '%s'...", name)
         self._send(name)
-        response = utils.get_line(self.socket)
-        assert response in (server.RESPONSE_OK, server.RESPONSE_ERR), f"Invalid response: '{response}'"
-        return response == server.RESPONSE_OK
+        response = self._read_response([server.RESPONSE_OK])
+        acquired = (response == server.RESPONSE_OK)
+        logging.info("Lock %s acquired: %s", name, acquired)
+        return acquired
 
     def server_shutdown(self):
+        logger.info("Sending SHUTDOWN...")
         self._send(server.ACTION_SERVER_SHUTDOWN)
-        logger.info("Shutdown sent to server")
-        response = utils.get_line(self.socket)
-        assert response == server.RESPONSE_SHUTTING_DOWN, response
-        return response
+        return self._read_response([server.RESPONSE_SHUTTING_DOWN])
 
     def ping(self):
+        logger.info("Sending PING...")
         self._send(server.ACTION_PING)
-        logger.info("Ping sent to server")
-        response = utils.get_line(self.socket)
-        assert response == server.RESPONSE_PONG
-        return response
+        return self._read_response([server.RESPONSE_PONG])
 
     def release(self):
+        logger.info("Trying to RELEASE...")
         self._send(server.ACTION_RELEASE)
-        response = utils.get_line(self.socket)
-        assert response == server.RESPONSE_RELEASED
-        logger.info("Released")
-        return response
+        return self._read_response([server.RESPONSE_RELEASED])
 
     def close(self):
-        self.socket.close()
+        self._socket.close()
 
 
 LockClient = _TemporalLockClient
