@@ -24,11 +24,15 @@ GLOBAL_LOCK = threading.Lock()
 
 LOCKS = collections.defaultdict(threading.Lock)
 
-RESPONSE_OK = 'ok\n'.encode()
-RESPONSE_ERR = 'err\n'.encode()
+RESPONSE_OK = 'ok'
+RESPONSE_ERR = 'err'
+RESPONSE_RELEASED = 'released'
+RESPONSE_SHUTTING_DOWN = 'shutting-down'
+RESPONSE_PONG = 'pong'
 
-SERVER_SHUTDOWN = '.SERVER_SHUTDOWN'
-PING = '.PING'
+ACTION_RELEASE = 'release'
+ACTION_SERVER_SHUTDOWN = '.server-shutdown'
+ACTION_PING = '.ping'
 
 
 class LockServer(socketserver.ThreadingTCPServer):
@@ -64,11 +68,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
         finally:
             lock.release()
 
+    def _send(self, message):
+        self.request.send((message + '\n').encode())
+
     def _real_handle_lock(self, lock):
         """
         While control is in this method, the lock is held
         """
-        self.request.send(RESPONSE_OK)
+        self._send(RESPONSE_OK)
         binary_data = bytearray()
         while True:
             action = utils.try_get_line(self.request, binary_data, timeout=1.0)
@@ -77,7 +84,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 binary_data = bytearray()
                 if action == 'release':
                     logger.debug("[%s] Releasing lock", self._lock_name)
-                    self.request.send('released\n'.encode())
+                    self._send(RESPONSE_RELEASED)
                     self.request.close()
                     # FIXME: at this point we send OK to the client, but internally the lock is STILL HELD
                     return
@@ -86,12 +93,12 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
     def _handle_server_shutdown(self):
         # FIXME: assert connections came from localhost
-        self.request.send('shutting-down\n'.encode())  # FIXME: what if client had closed the socket?
+        self._send(RESPONSE_SHUTTING_DOWN)  # FIXME: what if client had closed the socket?
         self.request.close()
         self.server.shutdown()
 
     def _handle_ping(self):
-        self.request.send('pong\n'.encode())  # FIXME: what if client had closed the socket?
+        self._send(RESPONSE_PONG)  # FIXME: what if client had closed the socket?
         self.request.close()
 
     def handle(self):
@@ -104,17 +111,20 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
         logger.debug("lock_name: '%s'", lock_name)
 
-        if lock_name == SERVER_SHUTDOWN:
+        if lock_name == ACTION_SERVER_SHUTDOWN:
             self._handle_server_shutdown()
             return
 
-        if lock_name == PING:
+        if lock_name == ACTION_PING:
             self._handle_ping()
             return
 
-        self._lock_name = lock_name
+        # FIXME: send error message instead of silently fail
+        assert not lock_name.startswith('.')
 
         # Not a special string? Then it's a lock name
+        self._lock_name = lock_name
+
         GLOBAL_LOCK.acquire()
         try:
             lock = LOCKS[lock_name]
@@ -127,7 +137,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self._handle_lock(lock)
         else:
             logger.debug("Couldn't get lock :(")
-            self.request.send(RESPONSE_ERR)  # FIXME: what if client had closed the socket?
+            self._send(RESPONSE_ERR)  # FIXME: what if client had closed the socket?
 
         self.request.close()
 

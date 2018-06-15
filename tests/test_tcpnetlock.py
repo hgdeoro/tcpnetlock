@@ -147,6 +147,7 @@ def test_lock_released_when_client_closes_connection(lock_server):
             time.sleep(0.1)
     assert acquired
 
+
 def test_command_line_interface():
     """Test the CLI."""
     runner = CliRunner()

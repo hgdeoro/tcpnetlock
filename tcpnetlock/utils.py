@@ -23,7 +23,7 @@ class ClientDisconnected(Exception):
 def try_get_line(sock: socket.socket, binary_data: bytearray, timeout=None, recv_size=1):
     # We need 'recv_size = 1' because we don't handle (yet) the case were
     # client sends 'lock1\nrelease\n'
-    # FIXME: re-implement parser, in way that handles correclty lock1\nrelease\n'
+    # FIXME: re-implement parser, in way that handles correctly lock\nrelease\n'
     recv_size = 1
     """
     * timeout=None -> disable timeout and red (will BLOCK until we get data)
