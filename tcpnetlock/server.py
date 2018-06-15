@@ -40,6 +40,10 @@ class LockServer(socketserver.ThreadingTCPServer):
 
 class TCPHandler(socketserver.BaseRequestHandler):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._lock_name = None
+
     def _get_lockname(self) -> str:
         """
         Reads (blocking) until we got a lock name
@@ -53,7 +57,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
     def _handle_lock(self, lock):
         try:
-            self._real_handle_lock(lock)
+            try:
+                self._real_handle_lock(lock)
+            except utils.ClientDisconnected:
+                logger.info("[%s] Client disconnected", self._lock_name)
         finally:
             lock.release()
 
@@ -65,30 +72,36 @@ class TCPHandler(socketserver.BaseRequestHandler):
         binary_data = bytearray()
         while True:
             action = utils.try_get_line(self.request, binary_data, timeout=1.0)
-            logger.debug("action: '%s'", action)
+            logger.debug("[%s] action: '%s'", self._lock_name, action)
             if action:
                 binary_data = bytearray()
                 if action == 'release':
-                    logger.debug("Releasing lock")
+                    logger.debug("[%s] Releasing lock", self._lock_name)
                     self.request.send('released\n'.encode())
                     self.request.close()
                     # FIXME: at this point we send OK to the client, but internally the lock is STILL HELD
                     return
                 else:
-                    logger.debug("Unknown action: '%s'", action)
+                    logger.debug("[%s] Unknown action: '%s'", self._lock_name, action)
 
     def _handle_server_shutdown(self):
         # FIXME: assert connections came from localhost
-        self.request.send('shutting-down\n'.encode())
+        self.request.send('shutting-down\n'.encode())  # FIXME: what if client had closed the socket?
         self.request.close()
         self.server.shutdown()
 
     def _handle_ping(self):
-        self.request.send('pong\n'.encode())
+        self.request.send('pong\n'.encode())  # FIXME: what if client had closed the socket?
         self.request.close()
 
     def handle(self):
-        lock_name = self._get_lockname()
+        try:
+            lock_name = self._get_lockname()
+        except utils.ClientDisconnected:
+            logger.info("Client disconnected")
+            self.request.close()
+            return
+
         logger.debug("lock_name: '%s'", lock_name)
 
         if lock_name == SERVER_SHUTDOWN:
@@ -98,6 +111,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         if lock_name == PING:
             self._handle_ping()
             return
+
+        self._lock_name = lock_name
 
         # Not a special string? Then it's a lock name
         GLOBAL_LOCK.acquire()
@@ -112,7 +127,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self._handle_lock(lock)
         else:
             logger.debug("Couldn't get lock :(")
-            self.request.send(RESPONSE_ERR)
+            self.request.send(RESPONSE_ERR)  # FIXME: what if client had closed the socket?
 
         self.request.close()
 

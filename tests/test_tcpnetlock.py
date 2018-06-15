@@ -125,6 +125,28 @@ def test_released_lock_and_be_re_acquired(lock_server):
     client2.close()
 
 
+def test_lock_released_when_client_closes_connection(lock_server):
+    """Test that a locks can be acquired again after it's released"""
+    name = uuid.uuid4().hex
+
+    # acquire lock
+    client1 = LockClient()
+    client1.connect()
+    acquired = client1.lock(name)
+    assert acquired
+    # don't release socket, just close the connection
+    client1.close()
+
+    # re-acquire same lock
+    acquired = False
+    for _ in range(20):
+        client2 = LockClient()
+        client2.connect()
+        acquired = client2.lock(name)
+        if not acquired:
+            time.sleep(0.1)
+    assert acquired
+
 def test_command_line_interface():
     """Test the CLI."""
     runner = CliRunner()

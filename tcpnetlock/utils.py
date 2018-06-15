@@ -16,6 +16,10 @@ def get_line(sock, timeout=30):
     return None
 
 
+class ClientDisconnected(Exception):
+    pass
+
+
 def try_get_line(sock: socket.socket, binary_data: bytearray, timeout=None, recv_size=1):
     # We need 'recv_size = 1' because we don't handle (yet) the case were
     # client sends 'lock1\nrelease\n'
@@ -37,6 +41,10 @@ def try_get_line(sock: socket.socket, binary_data: bytearray, timeout=None, recv
         rr = sock.recv(recv_size)
     except socket.timeout:
         rr = None
+    else:
+        if not rr:
+            logger.debug("Client disconnected")
+            raise ClientDisconnected()
 
     logger.debug("Data received: %s", rr)
     if rr:
