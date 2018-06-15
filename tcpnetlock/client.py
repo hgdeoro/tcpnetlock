@@ -1,10 +1,14 @@
 import logging
 import socket
+import re
 
 from tcpnetlock import server
 from tcpnetlock import utils
 
 logger = logging.getLogger(__name__)
+
+
+VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
 class _TemporalLockClient:
@@ -18,6 +22,12 @@ class _TemporalLockClient:
         self._host = host
         self._port = port
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._acquired = None
+
+    @staticmethod
+    def valid_lock_name(lock_name):
+        """Returns True if the provided lock name is valid"""
+        return bool(VALID_LOCK_NAME_RE.match(lock_name))
 
     @staticmethod
     def _assert_response(response, valid_responses):
@@ -35,7 +45,13 @@ class _TemporalLockClient:
         logger.info("Connecting to '%s:%s'...", self._host, self._port)
         self._socket.connect((self._host, self._port))
 
-    def lock(self, name):
+    def lock(self, name: str) -> bool:
+        """
+        Tries to acquire a lock
+        :param name: lock name
+        :return: boolean indicating if lock as acquired or not
+        """
+        assert self.valid_lock_name(name)
         logger.info("Trying to acquire lock '%s'...", name)
         self._send(name)
         response = self._read_response([server.RESPONSE_OK])
@@ -60,6 +76,15 @@ class _TemporalLockClient:
 
     def close(self):
         self._socket.close()
+
+    @property
+    def acquired(self) -> bool:
+        """
+        Returns boolean indicating if lock was acquired or not
+        :return: True if lock was acquired, False otherwise
+        """
+        assert self._acquired in (True, False)  # Fail if lock() wasn't called
+        return self._acquired
 
 
 LockClient = _TemporalLockClient
