@@ -86,7 +86,7 @@ def test_get_two_different_lock(lock_server):
     client2.close()
 
 
-def test_lock_twice(lock_server):
+def test_lock_twice_fails(lock_server):
     """Test that a locks can NOT be acquired twice"""
     name = uuid.uuid4().hex
 
@@ -101,6 +101,27 @@ def test_lock_twice(lock_server):
     assert not acquired
 
     client1.close()
+    client2.close()
+
+
+def test_released_lock_and_be_re_acquired(lock_server):
+    """Test that a locks can be acquired again after it's released"""
+    name = uuid.uuid4().hex
+
+    # acquire lock
+    client1 = LockClient()
+    client1.connect()
+    acquired = client1.lock(name)
+    assert acquired
+    # release lock
+    client1.release()
+    client1.close()
+
+    # re-acquire same lock
+    client2 = LockClient()
+    client2.connect()
+    acquired = client2.lock(name)
+    assert acquired
     client2.close()
 
 

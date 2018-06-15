@@ -41,6 +41,13 @@ class _TemporalLockClient:
         logger.info("Ping OK")
         return response
 
+    def release(self):
+        self.socket.send("release\n".encode())
+        response = utils.get_line(self.socket)
+        assert response == "released"
+        logger.info("Released")
+        return response
+
     def close(self):
         self.socket.close()
 

@@ -70,7 +70,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 binary_data = bytearray()
                 if action == 'release':
                     logger.debug("Releasing lock")
+                    self.request.send('released\n'.encode())
                     self.request.close()
+                    # FIXME: at this point we send OK to the client, but internally the lock is STILL HELD
                     return
                 else:
                     logger.debug("Unknown action: '%s'", action)
