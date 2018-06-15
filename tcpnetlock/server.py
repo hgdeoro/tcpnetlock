@@ -7,8 +7,15 @@ from tcpnetlock import utils
 
 
 """
-This implement a very simple network lock server.
-The server ackquires the lock and returns 'ok' to the client
+This implement a very simple network lock server based on just TCP.
+
+The current implementation:
+
+    1. SERVER accept connection
+    2. CLIENT send the string 'lock-name\n'
+    3. SERVER tries to acquire the lock
+        - if lock is acquired, returns 'ok\n' to the client and the TCP connections is KEPT OPEN
+        - if lock is NOT acquired, returns 'err\n' to the client and the TCP connection is CLOSED
 """
 
 logger = logging.getLogger(__name__)
