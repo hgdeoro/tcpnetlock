@@ -1,14 +1,10 @@
 import logging
 import socket
-import re
 
 from tcpnetlock import server
 from tcpnetlock import utils
 
 logger = logging.getLogger(__name__)
-
-
-VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
 class _TemporalLockClient:
@@ -33,11 +29,13 @@ class _TemporalLockClient:
     @staticmethod
     def valid_lock_name(lock_name):
         """Returns True if the provided lock name is valid"""
-        return bool(VALID_LOCK_NAME_RE.match(lock_name))
+        return bool(server.VALID_LOCK_NAME_RE.match(lock_name))
 
     @staticmethod
-    def _assert_response(response, valid_responses):
-        assert response in valid_responses, f"Invalid response: '{response}'. Valid responses: {valid_responses}"
+    def _assert_response(response: str, valid_response_codes):
+        response_code = response.split(":")[0]
+        assert response_code in valid_response_codes,\
+            f"Invalid response: '{response}'. Valid responses: {valid_response_codes}"
 
     def _send(self, message):
         self._socket.send((message + '\n').encode())
@@ -61,7 +59,7 @@ class _TemporalLockClient:
         assert self.valid_lock_name(name)
         logger.info("Trying to acquire lock '%s'...", name)
         self._send(name)
-        response = self._read_response([server.RESPONSE_OK, server.RESPONSE_LOCK_FAILED])
+        response = self._read_response([server.RESPONSE_OK, server.RESPONSE_LOCK_FAILED, server.RESPONSE_ERR])
         self._acquired = (response == server.RESPONSE_OK)
         logging.info("Lock %s acquired: %s", name, self._acquired)
         return self._acquired
