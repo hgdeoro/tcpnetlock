@@ -26,6 +26,7 @@ LOCKS = collections.defaultdict(threading.Lock)
 
 RESPONSE_OK = 'ok'
 RESPONSE_ERR = 'err'
+RESPONSE_LOCK_FAILED = 'failed'
 RESPONSE_RELEASED = 'released'
 RESPONSE_SHUTTING_DOWN = 'shutting-down'
 RESPONSE_PONG = 'pong'
@@ -38,7 +39,7 @@ ACTION_PING = '.ping'
 class LockServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
 
-    def __init__(self, host, port):
+    def __init__(self, host='localhost', port=9999):
         super().__init__((host, port), TCPHandler)
 
 
@@ -137,7 +138,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self._handle_lock(lock)
         else:
             logger.debug("Couldn't get lock :(")
-            self._send(RESPONSE_ERR)  # FIXME: what if client had closed the socket?
+            self._send(RESPONSE_LOCK_FAILED)  # FIXME: what if client had closed the socket?
 
         self.request.close()
 
