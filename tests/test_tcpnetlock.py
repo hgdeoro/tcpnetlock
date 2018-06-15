@@ -5,6 +5,7 @@
 import multiprocessing
 import time
 import uuid
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -146,6 +147,42 @@ def test_lock_released_when_client_closes_connection(lock_server):
         if not acquired:
             time.sleep(0.1)
     assert acquired
+
+
+def test_server_rejects_invalid_lock_name(lock_server):
+    """Test that a locks can be acquired again after it's released"""
+    invalid_names = (
+        '.starts-with-space',
+        'contains space',
+        'contains%invalid%chars',
+    )
+
+    for invalid in invalid_names:
+        client1 = LockClient()
+        client1.valid_lock_name = mock.MagicMock(return_value=True)
+        client1.connect()
+        acquired = client1.lock(invalid)
+        assert not acquired, f"Lock granted for invalid lock name: '{invalid}'"
+        client1.close()
+
+
+def test_server_accept_valid_lock_name(lock_server):
+    valid_names = (
+        'valid-name',
+        'valid-name-8',
+        'valid_name',
+        ' space_is_ignored',
+        'space_is_ignored ',
+        ' space_is_ignored ',
+    )
+
+    for valid in valid_names:
+        client1 = LockClient()
+        client1.valid_lock_name = mock.MagicMock(return_value=True)
+        client1.connect()
+        acquired = client1.lock(valid)
+        assert acquired, f"Lock NOT granted for valid lock name: '{valid}'"
+        client1.close()
 
 
 def test_command_line_interface():
