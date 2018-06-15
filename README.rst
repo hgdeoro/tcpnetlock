@@ -20,7 +20,7 @@ TcpNetLock
 
 
 
-Distributed network lock based on TCP sockets
+Network lock based on TCP sockets
 
 
 * Free software: GNU General Public License v3

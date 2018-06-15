@@ -1,7 +1,7 @@
 GNU GENERAL PUBLIC LICENSE
                       Version 3, 29 June 2007
 
-    Distributed network lock based on TCP sockets
+    Network lock based on TCP sockets
     Copyright (C) 2018  Horacio G. de Oro
 
     This program is free software: you can redistribute it and/or modify

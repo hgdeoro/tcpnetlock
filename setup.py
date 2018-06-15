@@ -32,7 +32,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
-    description="Distributed network lock based on TCP sockets",
+    description="Network lock based on TCP sockets",
     entry_points={
         'console_scripts': [
             'tcpnetlock=tcpnetlock.cli:main',
