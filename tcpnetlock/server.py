@@ -1,10 +1,10 @@
 import collections
 import logging
+import re
 import socketserver
 import threading
 
 from tcpnetlock import utils
-
 
 """
 This implement a very simple network lock server based on just TCP.
@@ -47,6 +47,8 @@ ACTION_RELEASE = 'release'
 ACTION_SERVER_SHUTDOWN = '.server-shutdown'
 ACTION_PING = '.ping'
 
+VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
+
 
 class LockServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
@@ -61,7 +63,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         super().__init__(*args, **kwargs)
         self._lock_name = None
 
-    def _get_lockname(self) -> str:
+    def _get_line(self) -> str:
         """
         Reads (blocking) until we got a lock name
         :return: lock name
@@ -114,33 +116,39 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self._send(RESPONSE_PONG)  # FIXME: what if client had closed the socket?
         self.request.close()
 
+    def _handle_invalid_lock_hame(self):
+        self._send(RESPONSE_ERR + ':invalid lock name')  # FIXME: what if client had closed the socket?
+        self.request.close()
+
     def handle(self):
         try:
-            lock_name = self._get_lockname()
+            line = self._get_line()
         except utils.ClientDisconnected:
             logger.info("Client disconnected")
             self.request.close()
             return
 
-        logger.debug("lock_name: '%s'", lock_name)
+        logger.debug("Received line: '%s'", line)
 
-        if lock_name == ACTION_SERVER_SHUTDOWN:
+        if line == ACTION_SERVER_SHUTDOWN:
             self._handle_server_shutdown()
             return
 
-        if lock_name == ACTION_PING:
+        if line == ACTION_PING:
             self._handle_ping()
             return
 
-        # FIXME: send error message instead of silently fail
-        assert not lock_name.startswith('.')
+        if not VALID_LOCK_NAME_RE.match(line):
+            self._handle_invalid_lock_hame()
+            return
 
         # Not a special string? Then it's a lock name
-        self._lock_name = lock_name
+        self._lock_name = line
+        del line
 
         GLOBAL_LOCK.acquire()
         try:
-            lock = LOCKS[lock_name]
+            lock = LOCKS[self._lock_name]
         finally:
             GLOBAL_LOCK.release()
 
