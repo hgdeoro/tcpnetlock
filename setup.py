@@ -35,9 +35,11 @@ setup(
     description="Network lock based on TCP sockets",
     entry_points={
         'console_scripts': [
-            'tcpnetlock=tcpnetlock.cli:main',
+            'tcpnetlock_server=tcpnetlock.server:main',
+            'tcpnetlock_client=tcpnetlock.client:main',
         ],
     },
+    scripts=['bin/tcpnetlock-functions.sh'],
     install_requires=requirements,
     license="GNU General Public License v3",
     long_description=readme + '\n\n' + history,

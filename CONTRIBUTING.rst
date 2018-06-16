@@ -122,7 +122,8 @@ Make sure all your changes are committed (including an entry in HISTORY.rst).
 
 Then, to test & bump version run::
 
-    $ ( test -z "$(git status --porcelain)" || { echo "WORKING DIRECTORY IS NOT CLEAN" ; exit 1 ; } && \
+    $ ( rm -rf dist/ build/ ; \
+        test -z "$(git status --porcelain)" || { echo "WORKING DIRECTORY IS NOT CLEAN" ; exit 1 ; } && \
         tox && \
         bumpversion patch && \
         git push && \
@@ -130,7 +131,7 @@ Then, to test & bump version run::
 
 To upload to test.pypi.org::
 
-    $ ( rm -rf dist/ ; \
+    $ ( rm -rf dist/ build/ ; \
         python3 setup.py sdist bdist_wheel ; \
         twine upload -r pypitest dist/* ; \
         deactivate ; \
