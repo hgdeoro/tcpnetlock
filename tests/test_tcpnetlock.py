@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Tests for `tcpnetlock` package."""
-import multiprocessing
+import threading
 import time
 import uuid
 from unittest import mock
@@ -39,20 +39,19 @@ def lock_server():
         server = LockServer("localhost", 9999)
         server.serve_forever()
 
-    process = multiprocessing.Process(target=start_server)
-    process.daemon = True
-    process.start()
+    server_thread = threading.Thread(target=start_server, daemon=True)
+    server_thread.start()
     _wait_for_server()  # wait until server is ready
 
-    yield process
+    yield server_thread
 
     client = LockClient()
     client.connect()
     client.server_shutdown()
     client.close()
 
-    process.join(1)
-    process.terminate()
+    server_thread.join(5)
+    assert not server_thread.is_alive(), "TEST Server didn't shut down cleanly"
 
 
 def test_server_is_alive(lock_server):
