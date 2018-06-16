@@ -2,6 +2,8 @@ import argparse
 import logging
 import subprocess
 import sys
+import threading
+import time
 
 from tcpnetlock import client
 from tcpnetlock import server
@@ -31,13 +33,13 @@ class Main:
                             default=None,
                             help="Client id to report to the server")
 
-        # parser.add_argument("--keep-alive",
-        #                     default=False,
-        #                     action='store_true')
-        #
-        # parser.add_argument("--keep-alive-secs",
-        #                     default=15,
-        #                     type=int)
+        parser.add_argument("--keep-alive",
+                            default=False,
+                            action='store_true')
+
+        parser.add_argument("--keep-alive-secs",
+                            default=15,
+                            type=int)
 
         parser.add_argument("--debug",
                             default=False,
@@ -113,15 +115,16 @@ class Main:
             sys.exit(9)
 
         # --- Send keepalive from thread
-        # if args.keep_alive:
-        #     while True:
-        #         logger.debug("Sleeping for %s... (after that, will send a keep-alive)", args.keep_alive_secs)
-        #         time.sleep(args.keep_alive_secs)
-        #         lock_client.keepalive()
-        # else:
-        #     while True:
-        #         logger.debug("Sleeping for an hour...")
-        #         time.sleep(60 * 60)
+        keepalive_thread = None
+        if self.args.keep_alive:
+            def loop_keepalives():
+                while True:
+                    logger.debug("Sleeping for %s before sending keep-alive", self.args.keep_alive_secs)
+                    time.sleep(self.args.keep_alive_secs)
+                    logger.info("Sending keepalive")
+                    lock_client.keepalive()
+            keepalive_thread = threading.Thread(target=loop_keepalives, daemon=True)
+            keepalive_thread.start()
 
         # --- Call command
         logger.info("Lock '%s' was granted. Proceeding with command '%s'", self.args.lock_name, self.args.command)
@@ -136,8 +139,15 @@ class Main:
         except FileNotFoundError as err:
             sys.stderr.write("ERROR: command not found: '{command}'\n".format(command=err.filename))
             sys.exit(127)
+        except KeyboardInterrupt:
+            # FIXME: Handle KeyboardInterrupt !!!
+            pass
         finally:
             lock_client.release()
+
+        # --- Finish thread
+        if keepalive_thread:
+            pass  # FIXME: stop sending keepalives
 
         # --- Exit with same 'exit status' of the process we have just ran
         if completed_process:
