@@ -195,25 +195,3 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self._send(RESPONSE_LOCK_FAILED)  # FIXME: what if client had closed the socket?
 
         self.request.close()
-
-
-def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--listen", default='localhost')
-    parser.add_argument("--port", default=9999, type=int)
-    parser.add_argument("--debug", default=False, action='store_true')
-    args = parser.parse_args()
-
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
-    with LockServer(args.listen, args.port) as server:
-        logging.info("Started listening on %s:%s", args.listen, args.port)
-        server.serve_forever()
-
-
-if __name__ == '__main__':
-    main()

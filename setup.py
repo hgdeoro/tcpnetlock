@@ -35,8 +35,8 @@ setup(
     description="Network lock based on TCP sockets",
     entry_points={
         'console_scripts': [
-            'tcpnetlock_server=tcpnetlock.server:main',
-            'tcpnetlock_client=tcpnetlock.client:main',
+            'tcpnetlock_server=tcpnetlock.cli.server:main',
+            'tcpnetlock_client=tcpnetlock.cli.client:main',
         ],
     },
     scripts=['bin/tcpnetlock-functions.sh'],
@@ -46,7 +46,7 @@ setup(
     include_package_data=True,
     keywords='tcpnetlock',
     name='tcpnetlock',
-    packages=find_packages(include=['tcpnetlock']),
+    packages=find_packages(include=['tcpnetlock', 'tcpnetlock.cli']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

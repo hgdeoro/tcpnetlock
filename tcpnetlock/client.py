@@ -1,7 +1,5 @@
 import logging
 import socket
-import sys
-import time
 
 from tcpnetlock import server
 from tcpnetlock import utils
@@ -136,43 +134,3 @@ class LockClient:
         """
         assert self._acquired in (True, False)  # Fail if lock() wasn't called
         return self._acquired
-
-
-def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("lock_name")
-    parser.add_argument("--host", default='localhost')
-    parser.add_argument("--port", default=9999, type=int)
-    parser.add_argument("--client-id", default=None)
-    parser.add_argument("--keep-alive", default=False, action='store_true')
-    parser.add_argument("--keep-alive-secs", default=15, type=int)
-    parser.add_argument("--debug", default=False, action='store_true')
-    parser.add_argument("--print-marks", default=False, action='store_true')
-    args = parser.parse_args()
-
-    if args.debug or args.print_marks:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
-    client = LockClient(args.host, args.port, client_id=args.client_id, print_marks=args.print_marks)
-    client.connect()
-    granted = client.lock(args.lock_name)
-    if not granted:
-        logger.debug("Lock not granted. Exiting...")
-        sys.exit(9)
-
-    if args.keep_alive:
-        while True:
-            logger.debug("Sleeping for %s... (after that, will send a keep-alive)", args.keep_alive_secs)
-            time.sleep(args.keep_alive_secs)
-            client.keepalive()
-    else:
-        while True:
-            logger.debug("Sleeping for an hour...")
-            time.sleep(60 * 60)
-
-
-if __name__ == '__main__':
-    main()
