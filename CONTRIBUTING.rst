@@ -119,10 +119,28 @@ Deploying
 
 A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
 
-$ bumpversion patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+Then, to test & bump version run::
 
-Travis will then deploy to PyPI if tests pass.
+$ ( test -z "$(git status --porcelain)" || { echo "WORKING DIRECTORY IS NOT CLEAN" ; exit 1 ; } && \
+    tox && \
+    bumpversion patch && \
+    git push && \
+    git push --tags )
+
+To upload to test.pypi.org::
+
+$ ( rm -rf dist/ ; \
+    python3 setup.py sdist bdist_wheel ; \
+    twine upload -r pypitest dist/* ; \
+    deactivate ; \
+    cd / ; \
+    export VID=$(uuidgen) ; \
+    virtualenv -p python3.6 /tmp/venv-$VID ; \
+    source /tmp/venv-$VID/bin/activate ; \
+    pip install --index-url https://test.pypi.org/simple/ tcpnetlock ; \
+    )
+
+To upload to pypi.org::
+
+$ twine upload -r pypi dist/*
