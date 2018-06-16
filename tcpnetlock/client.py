@@ -127,6 +127,7 @@ def main():
     parser.add_argument("--port", default=9999, type=int)
     parser.add_argument("--client-id", default=None)
     parser.add_argument("--keep-alive", default=False, action='store_true')
+    parser.add_argument("--keep-alive-secs", default=15, type=int)
     parser.add_argument("--debug", default=False, action='store_true')
     args = parser.parse_args()
 
@@ -140,8 +141,8 @@ def main():
     client.lock(args.lock_name)
     if args.keep_alive:
         while True:
-            logger.debug("Sleeping for 15... (after that, will send a keep-alive)")
-            time.sleep(3)
+            logger.debug("Sleeping for %s... (after that, will send a keep-alive)", args.keep_alive_secs)
+            time.sleep(args.keep_alive_secs)
             client.keepalive()
     else:
         while True:
