@@ -16,7 +16,7 @@ class LockClient:
     of the real client.
     """
 
-    def __init__(self, host='localhost', port=9999, client_id=None):
+    def __init__(self, host='localhost', port=9999, client_id=None, print_marks=False):
         """
         Creates a client to connect to the server.
 
@@ -27,9 +27,10 @@ class LockClient:
         self._port = port
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._acquired = None
-        self._client_id = client_id
+        self._print_marks = bool(print_marks)
         if client_id:
             assert self.valid_client_id(client_id), "Invalid client_id: {client_id}".format(client_id=client_id)
+        self._client_id = client_id
 
     @staticmethod
     def valid_lock_name(lock_name):
@@ -62,7 +63,20 @@ class LockClient:
     def connect(self):
         """Connects to the server"""
         logger.info("Connecting to '%s:%s'...", self._host, self._port)
-        self._socket.connect((self._host, self._port))
+        try:
+            self._socket.connect((self._host, self._port))
+            self._mark('CONNECTION,OK')
+        except ConnectionRefusedError:
+            self._mark('CONNECTION,REFUSED')
+            raise
+        except:  # noqa: E722
+            self._mark('CONNECTION,ERROR')
+            raise
+
+    def _mark(self, message, *args, **kwargs):
+        """Print easy to parse messages"""
+        if self._print_marks:
+            logging.debug("MARK," + message + ",END", *args, **kwargs)
 
     def lock(self, name: str) -> bool:
         """
@@ -80,7 +94,8 @@ class LockClient:
         response = self._read_response([server.RESPONSE_OK, server.RESPONSE_LOCK_FAILED, server.RESPONSE_ERR])
         self._acquired = (response == server.RESPONSE_OK)
         logging.info("Lock %s acquired: %s", name, self._acquired)
-        logging.debug("LOCK_RESULT,LOCK:%s,ACQUIRED:%s", name, self._acquired)  # This is easier to parse from cli
+        self._mark("LOCK_RESULT,LOCK:%s,ACQUIRED:%s", name, self._acquired)
+
         return self._acquired
 
     def server_shutdown(self):
@@ -99,7 +114,9 @@ class LockClient:
         """Send a keepalive to the server"""
         logger.info("Sending KEEPALIVE...")
         self._send(server.ACTION_KEEPALIVE)
-        return self._read_response([server.RESPONSE_STILL_ALIVE])
+        response = self._read_response([server.RESPONSE_STILL_ALIVE])
+        self._mark('KEEPALIVE,OK')
+        return response
 
     def release(self):
         """Release the held lock"""
@@ -131,14 +148,15 @@ def main():
     parser.add_argument("--keep-alive", default=False, action='store_true')
     parser.add_argument("--keep-alive-secs", default=15, type=int)
     parser.add_argument("--debug", default=False, action='store_true')
+    parser.add_argument("--print-marks", default=False, action='store_true')
     args = parser.parse_args()
 
-    if args.debug:
+    if args.debug or args.print_marks:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
 
-    client = LockClient(args.host, args.port, client_id=args.client_id)
+    client = LockClient(args.host, args.port, client_id=args.client_id, print_marks=args.print_marks)
     client.connect()
     granted = client.lock(args.lock_name)
     if not granted:
