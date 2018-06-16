@@ -1,5 +1,6 @@
 import argparse
 import logging
+import queue
 import subprocess
 import sys
 import threading
@@ -127,13 +128,23 @@ class Main:
 
         # --- Send keepalive from thread
         keepalive_thread = None
+        keepalive_queue = None
         if self.args.keep_alive:
+            keepalive_queue = queue.Queue()
             def loop_keepalives():
                 while True:
                     logger.debug("Sleeping for %s before sending keep-alive", self.args.keep_alive_secs)
-                    time.sleep(self.args.keep_alive_secs)
+                    for _ in range(self.args.keep_alive_secs):
+                        try:
+                            msg = keepalive_queue.get(block=True, timeout=1)
+                            if msg is None:
+                                logger.info("Shutting down keepalive thread...")
+                                return
+                        except queue.Empty:
+                            pass
                     logger.info("Sending keepalive")
                     lock_client.keepalive()
+
             keepalive_thread = threading.Thread(target=loop_keepalives, daemon=True)
             keepalive_thread.start()
 
@@ -152,12 +163,18 @@ class Main:
             sys.exit(self.ERR_FILE_NOT_FOUND)
         except KeyboardInterrupt:
             pass
-        finally:
-            lock_client.release()
 
-        # --- Finish thread
-        if keepalive_thread:
-            pass  # FIXME: stop sending keepalives
+        try:
+            # --- Finish thread
+            if keepalive_thread:
+                keepalive_queue.put(None)
+                keepalive_thread.join(2)
+                if keepalive_thread.is_alive():
+                    logger.warning("keepalive_thread still alive: %s", keepalive_thread)
+        finally:
+            # Release AFTER keepalive thread is stopped. Otherwise, the 2 threads could be concurrently reading/writing
+            #  to the socket
+            lock_client.release()
 
         # --- Exit with same 'exit status' of the process we have just ran
         if completed_process:
