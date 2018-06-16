@@ -145,3 +145,15 @@ To upload to test.pypi.org::
 To upload to pypi.org::
 
     $ twine upload -r pypi dist/*
+
+
+To install locally in a brand new virtualenv::
+
+    $ ( rm -rf dist/ build/ ; \
+        python3 setup.py sdist bdist_wheel ; \
+        deactivate ; \
+        export VID=$(uuidgen) ; \
+        virtualenv -p python3.6 /tmp/venv-$VID ; \
+        source /tmp/venv-$VID/bin/activate ; \
+        pip install ./dist/tcpnetlock*.whl ; \
+        )
