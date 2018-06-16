@@ -121,8 +121,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
             logger.debug("[%s] action: '%s'", self._lock_name, action)
             if action:
                 binary_data = bytearray()
-                if action == 'release':
-                    logger.debug("[%s] Releasing lock", self._lock_name)
+                if action == ACTION_RELEASE:
+                    logger.debug("Releasing lock: %s", holder)
                     self._send(RESPONSE_RELEASED)
                     self.request.close()
                     # FIXME: at this point we send OK to the client, but internally the lock is STILL HELD
