@@ -30,6 +30,7 @@ function lock_in_bg() {
 		test -e $CLOUDLAB_TMP_LOG && /bin/rm -f $CLOUDLAB_TMP_LOG ; \
 		exit 8' SIGINT SIGTERM
 
+    echo "Trying to acquire lock '$CLOUDLAB_LOCK_NAME'"
 	python -m tcpnetlock.client --debug --host=$CLOUDLAB_HOST --port=$CLOUDLAB_PORT --print-marks \
 		--client-id=$CLOUDLAB_CLIENT_ID --keep-alive $CLOUDLAB_LOCK_NAME > $CLOUDLAB_TMP_LOG 2>&1 & CLOUDLAB_TMP_PID=$!
 	echo "Background PID: $CLOUDLAB_TMP_PID"
@@ -61,11 +62,29 @@ function lock_in_bg() {
 
 }
 
+function release_lock() {
+    kill $CLOUDLAB_TMP_PID
+    rm $CLOUDLAB_TMP_LOG
+
+	trap '' EXIT
+	trap '' SIGINT SIGTERM
+}
+
+
 lock_in_bg
 
 #
 # DO WHAT YOU NEED TO DO HERE
 #
+
+for pending in $(seq 5 | tac) ; do
+	echo "WORKING... Still $pending pending..."
+	sleep 1
+done
+
+release_lock
+
+echo "Lock released..."
 
 for pending in $(seq 5 | tac) ; do
 	echo "WORKING... Still $pending pending..."
