@@ -37,6 +37,7 @@ setup(
         'console_scripts': [
             'tcpnetlock_server=tcpnetlock.cli.server:main',
             'tcpnetlock_client=tcpnetlock.cli.client:main',
+            'run_with_lock=tcpnetlock.cli.run_with_lock:main'
         ],
     },
     scripts=['bin/tcpnetlock-functions.sh'],
