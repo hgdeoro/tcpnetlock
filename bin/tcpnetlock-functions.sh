@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# --------------------------------------------------------------------------------------------------------------
+# Documentation
+# --------------------------------------------------------------------------------------------------------------
 #
 # ATTENTION: this script should be SOURCED. Here we define 2 functions to interact to TPPNetLock from shell script
 #
@@ -16,12 +19,22 @@
 # The lock will also be released automatically if the client is killed (because the TCP connection will be closed and
 #  then the server will release the lock)
 #
-# Configuration is done thruogh environment variables:
+# Configuration of the CLIENT is done through environment variables:
 #
-# - CLOUDLAB_PORT (defaults to 9999)
-# - CLOUDLAB_HOST (defauls to 'localhost')
-# - CLOUDLAB_CLIENT_ID (default derivated from shell script filename + hostname)
-# - CLOUDLAB_LOCK_NAME (default derivated from shell script filename)
+# - TCPNETLOCK_PORT (defaults to 9999)
+# - TCPNETLOCK_HOST (defauls to 'localhost')
+# - TCPNETLOCK_CLIENT_ID (default derivated from shell script filename + hostname)
+# - TCPNETLOCK_LOCK_NAME (default derivated from shell script filename)
+#
+# And to modify default behaviour of this script, you can use:
+# - TCPNETLOCK_KEEP_LOG : set to '1' to keep the log file where output of client was saved
+# - TCPNETLOCK_DUMP_LOG : set to '1' to dump the log of the client
+#
+#
+# --------------------------------------------------------------------------------------------------------------
+# TODO
+# --------------------------------------------------------------------------------------------------------------
+# - BUG: script fails if an invalid lock name is provided
 #
 
 EXIT_CONNECTION_ERROR=3
@@ -34,34 +47,33 @@ EXIT_SIGHANDLER=8
 function lock_in_bg() {
 
     this_file_name_safe="$(echo $(basename $0) | tr . - | sed 's/[^0-9a-zA-Z_-]*//g')"
-	export CLOUDLAB_PORT=${CLOUDLAB_PORT:-9999}
-	export CLOUDLAB_HOST=${CLOUDLAB_HOST:-localhost}
-	export CLOUDLAB_CLIENT_ID=${CLOUDLAB_CLIENT_ID:-"${this_file_name_safe}-at-$(hostname)"}
-	export CLOUDLAB_LOCK_NAME=${CLOUDLAB_LOCK_NAME:-${this_file_name_safe}}
-	CLOUDLAB_TMP_LOG=$(mktemp)
-	CLOUDLAB_TMP_PID='0'
+    # configuration variables (can be overidden by user)
+	export TCPNETLOCK_PORT=${TCPNETLOCK_PORT:-9999}
+	export TCPNETLOCK_HOST=${TCPNETLOCK_HOST:-localhost}
+	export TCPNETLOCK_CLIENT_ID=${TCPNETLOCK_CLIENT_ID:-"${this_file_name_safe}-at-$(hostname)"}
+	export TCPNETLOCK_LOCK_NAME=${TCPNETLOCK_LOCK_NAME:-${this_file_name_safe}}
 
-	echo "TNL> Logging to $CLOUDLAB_TMP_LOG"
-	trap '\
-		echo "Cleanup pids $CLOUDLAB_TMP_PID and $CLOUDLAB_TMP_LOG" ; \
-		ps --no-headers -q $CLOUDLAB_TMP_PID | grep -q $CLOUDLAB_TMP_PID && kill $CLOUDLAB_TMP_PID ; \
-		test -e $CLOUDLAB_TMP_LOG && /bin/rm -f $CLOUDLAB_TMP_LOG \
-		' EXIT
-	trap '\
-		echo "Cleanup pids $CLOUDLAB_TMP_PID and $CLOUDLAB_TMP_LOG" ; \
-		ps --no-headers -q $CLOUDLAB_TMP_PID | grep -q $CLOUDLAB_TMP_PID && kill $CLOUDLAB_TMP_PID ; \
-		test -e $CLOUDLAB_TMP_LOG && /bin/rm -f $CLOUDLAB_TMP_LOG ; \
-		exit $EXIT_SIGHANDLER' SIGINT SIGTERM
+	# configuration for this script
+	TCPNETLOCK_KEEP_LOG="${TCPNETLOCK_KEEP_LOG:-0}"
+	TCPNETLOCK_DUMP_LOG="${TCPNETLOCK_DUMP_LOG:-0}"
 
-    echo "TNL> Trying to acquire lock '$CLOUDLAB_LOCK_NAME'"
-	python -m tcpnetlock.client --debug --host=$CLOUDLAB_HOST --port=$CLOUDLAB_PORT --print-marks \
-		--client-id=$CLOUDLAB_CLIENT_ID --keep-alive $CLOUDLAB_LOCK_NAME > $CLOUDLAB_TMP_LOG 2>&1 & CLOUDLAB_TMP_PID=$!
-	echo "TNL> Background PID: $CLOUDLAB_TMP_PID"
+	# internal variables
+	TCPNETLOCK_TMP_LOG=$(mktemp)
+	TCPNETLOCK_TMP_PID='0'
+
+	echo "TNL> Logging to $TCPNETLOCK_TMP_LOG"
+	trap '_cleanup' EXIT
+	trap '_cleanup ; exit $EXIT_SIGHANDLER' SIGINT SIGTERM
+
+    echo "TNL> Trying to acquire lock '$TCPNETLOCK_LOCK_NAME'"
+	python -m tcpnetlock.client --debug --host=$TCPNETLOCK_HOST --port=$TCPNETLOCK_PORT --print-marks \
+		--client-id=$TCPNETLOCK_CLIENT_ID --keep-alive $TCPNETLOCK_LOCK_NAME > $TCPNETLOCK_TMP_LOG 2>&1 & TCPNETLOCK_TMP_PID=$!
+	echo "TNL> Background PID: $TCPNETLOCK_TMP_PID"
 
 	connection_full_line=''
 	while [ -z "$connection_full_line" ] ; do
 		sleep 0.2  # an initial wait won't hurt
-		connection_full_line="$(egrep -o 'MARK,CONNECTION,.+,END' $CLOUDLAB_TMP_LOG)"
+		connection_full_line="$(egrep -o 'MARK,CONNECTION,.+,END' $TCPNETLOCK_TMP_LOG)"
 	done
 	connection=$(echo "$connection_full_line" | cut -d , -f 3)
 	case "$connection" in
@@ -73,7 +85,7 @@ function lock_in_bg() {
 	acquire_status_full_line=''
 	while [ -z "$acquire_status_full_line" ] ; do
 		sleep 0.2  # an initial wait won't hurt
-		acquire_status_full_line="$(egrep -o 'MARK,LOCK_RESULT,LOCK:.+,ACQUIRED:.+,END' $CLOUDLAB_TMP_LOG)"
+		acquire_status_full_line="$(egrep -o 'MARK,LOCK_RESULT,LOCK:.+,ACQUIRED:.+,END' $TCPNETLOCK_TMP_LOG)"
 	done
 	acquired=$(echo "$acquire_status_full_line" | cut -d , -f 4 | cut -d : -f 2)
 	case "$acquired" in
@@ -85,18 +97,27 @@ function lock_in_bg() {
 }
 
 function release_lock() {
-    kill $CLOUDLAB_TMP_PID
-    rm $CLOUDLAB_TMP_LOG
-
+    _cleanup
 	trap '' EXIT
 	trap '' SIGINT SIGTERM
 }
 
+function _cleanup() {
+    echo "TNL> Cleanup pids $TCPNETLOCK_TMP_PID and $TCPNETLOCK_TMP_LOG"
+    ps --no-headers -q $TCPNETLOCK_TMP_PID | grep -q $TCPNETLOCK_TMP_PID && {
+        kill $TCPNETLOCK_TMP_PID  # lock is released here
+    }
+    test "$TCPNETLOCK_DUMP_LOG" = '0' || {
+        _print_logs
+    }
+    test -e $TCPNETLOCK_TMP_LOG && test $TCPNETLOCK_KEEP_LOG = '0' && /bin/rm -f $TCPNETLOCK_TMP_LOG
+}
+
 function _print_logs() {
-    test -e $CLOUDLAB_TMP_LOG || return
-    echo "TNL> Marks found in log file ----------"
-    egrep -o 'MARK,LOCK_RESULT,LOCK:.+,ACQUIRED:.+,END' $CLOUDLAB_TMP_LOG
-    echo "TNL> Full contents of log file ----------"
-    cat $CLOUDLAB_TMP_LOG
-    echo "TNL> ----------"
+    test -e $TCPNETLOCK_TMP_LOG || return
+    echo "TNL> ---------- Marks found in log file ----------"
+    egrep -o 'MARK,LOCK_RESULT,LOCK:.+,ACQUIRED:.+,END' $TCPNETLOCK_TMP_LOG
+    echo "TNL> ---------- Full contents of log file ----------"
+    cat $TCPNETLOCK_TMP_LOG
+    echo "TNL> ------------------------------"
 }
