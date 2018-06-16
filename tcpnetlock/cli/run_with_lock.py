@@ -4,7 +4,6 @@ import queue
 import subprocess
 import sys
 import threading
-import time
 
 from tcpnetlock import client
 from tcpnetlock import server
@@ -139,8 +138,8 @@ class Main:
             keepalive_thread.join(2)
             if keepalive_thread.is_alive():
                 logger.warning("keepalive_thread still alive: %s", keepalive_thread)
-        except:
-            logger.warning("Error ocurred while stopping background thread")
+        except:  # noqa: E722 we need to ignore any error
+            logger.warning("Error occurred while stopping background thread")
 
     def run(self):
         self.create_parser()
