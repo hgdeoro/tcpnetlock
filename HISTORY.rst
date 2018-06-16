@@ -2,6 +2,11 @@
 History
 =======
 
+0.0.6 (2018-06-16)
+------------------
+
+* Create shell script to be sourced, to facilitate use of tcpnetlock from shell scripts
+
 0.0.5 (2018-06-15)
 ------------------
 
