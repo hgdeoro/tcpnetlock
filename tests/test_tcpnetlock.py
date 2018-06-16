@@ -8,9 +8,7 @@ import uuid
 from unittest import mock
 
 import pytest
-from click.testing import CliRunner
 
-from tcpnetlock import cli
 from tcpnetlock.client import LockClient
 from tcpnetlock.server import LockServer
 
@@ -193,14 +191,3 @@ def test_server_accept_valid_lock_name(lock_server):
         acquired = client.lock(valid)
         assert acquired, "Lock NOT granted for valid lock name: '{valid}'".format(valid=valid)
         client.close()
-
-
-def test_command_line_interface():
-    """Test the CLI."""
-    runner = CliRunner()
-    result = runner.invoke(cli.main)
-    assert result.exit_code == 0
-    assert 'tcpnetlock.cli.main' in result.output
-    help_result = runner.invoke(cli.main, ['--help'])
-    assert help_result.exit_code == 0
-    assert '--help  Show this message and exit.' in help_result.output
