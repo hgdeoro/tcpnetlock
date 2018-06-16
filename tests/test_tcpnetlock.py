@@ -161,7 +161,7 @@ def test_server_rejects_invalid_lock_name(lock_server):
         client.valid_lock_name = mock.MagicMock(return_value=True)
         client.connect()
         acquired = client.lock(invalid)
-        assert not acquired, f"Lock granted for invalid lock name: '{invalid}'"
+        assert not acquired, "Lock granted for invalid lock name: '{invalid}'".format(invalid=invalid)
         client.close()
 
 
@@ -180,7 +180,7 @@ def test_server_accept_valid_lock_name(lock_server):
         client.valid_lock_name = mock.MagicMock(return_value=True)
         client.connect()
         acquired = client.lock(valid)
-        assert acquired, f"Lock NOT granted for valid lock name: '{valid}'"
+        assert acquired, "Lock NOT granted for valid lock name: '{valid}'".format(valid=valid)
         client.close()
 
 

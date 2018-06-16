@@ -35,7 +35,9 @@ class LockClient:
     def _assert_response(response: str, valid_response_codes):
         response_code = response.split(":")[0]
         assert response_code in valid_response_codes,\
-            f"Invalid response: '{response}'. Valid responses: {valid_response_codes}"
+            "Invalid response: '{response}'. Valid responses: {valid_response_codes}".format(
+                response=response, valid_response_codes=valid_response_codes
+            )
 
     def _send(self, message):
         self._socket.send((message + '\n').encode())
