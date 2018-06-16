@@ -40,10 +40,12 @@ RESPONSE_LOCK_FAILED = 'failed'
 RESPONSE_RELEASED = 'released'
 RESPONSE_SHUTTING_DOWN = 'shutting-down'
 RESPONSE_PONG = 'pong'
+RESPONSE_STILL_ALIVE = 'alive'
 
 ACTION_RELEASE = 'release'
 ACTION_SERVER_SHUTDOWN = '.server-shutdown'
 ACTION_PING = '.ping'
+ACTION_KEEPALIVE = '.keepalive'
 
 VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 
@@ -127,8 +129,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
                     self.request.close()
                     # FIXME: at this point we send OK to the client, but internally the lock is STILL HELD
                     return
+                if action == ACTION_KEEPALIVE:
+                    logger.debug("Received keepalive from client. Lock: %s", holder)
+                    self._send(RESPONSE_STILL_ALIVE)
                 else:
-                    logger.debug("[%s] Unknown action: '%s'", self._lock_name, action)
+                    logger.debug("Unknown action '%s' for lock: ", action, holder)
 
     def _handle_server_shutdown(self):
         # FIXME: assert connections came from localhost

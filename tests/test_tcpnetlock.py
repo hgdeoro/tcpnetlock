@@ -71,6 +71,17 @@ def test_connect_and_get_lock_works(lock_server):
     client.close()
 
 
+def test_connect_and_get_lock_works(lock_server):
+    """Test that a lock can be acquired"""
+    client = LockClient()
+    client.connect()
+    acquired = client.lock(uuid.uuid4().hex)
+    for _ in range(5):
+        client.keepalive()
+        time.sleep(0.5)
+    client.close()
+
+
 def test_get_two_different_lock(lock_server):
     """Test that two different locks can be acquired"""
     client_1 = LockClient()

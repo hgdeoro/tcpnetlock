@@ -79,6 +79,12 @@ class LockClient:
         self._send(server.ACTION_PING)
         return self._read_response([server.RESPONSE_PONG])
 
+    def keepalive(self):
+        """Send a keepalive to the server"""
+        logger.info("Sending KEEPALIVE...")
+        self._send(server.ACTION_KEEPALIVE)
+        return self._read_response([server.RESPONSE_STILL_ALIVE])
+
     def release(self):
         """Release the held lock"""
         logger.info("Trying to RELEASE...")
