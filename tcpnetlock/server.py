@@ -32,9 +32,6 @@ Detail of the current implementation:
 
 logger = logging.getLogger(__name__)
 
-GLOBAL_LOCK = threading.Lock()
-
-LOCKS = collections.defaultdict(threading.Lock)
 
 RESPONSE_OK = 'ok'
 RESPONSE_ERR = 'err'
@@ -58,6 +55,8 @@ class LockServer(socketserver.ThreadingTCPServer):
 
 
 class TCPHandler(socketserver.BaseRequestHandler):
+    GLOBAL_LOCK = threading.Lock()
+    LOCKS = collections.defaultdict(threading.Lock)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -146,11 +145,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self._lock_name = line
         del line
 
-        GLOBAL_LOCK.acquire()
+        self.GLOBAL_LOCK.acquire()
         try:
-            lock = LOCKS[self._lock_name]
+            lock = self.LOCKS[self._lock_name]
         finally:
-            GLOBAL_LOCK.release()
+            self.GLOBAL_LOCK.release()
 
         locked = lock.acquire(blocking=False)
         if locked:

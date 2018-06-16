@@ -7,7 +7,7 @@ from tcpnetlock import utils
 logger = logging.getLogger(__name__)
 
 
-class _TemporalLockClient:
+class LockClient:
     """
     This is a temporal implementation of the client, with just the basic stuff to be able to develop
     unittests for the server code. Some of this code may be used, in the future, for the implementation
@@ -41,6 +41,7 @@ class _TemporalLockClient:
         self._socket.send((message + '\n').encode())
 
     def _read_response(self, valid_responses):
+        # FIXME: we should time-out here after some time
         response = utils.get_line(self._socket)
         self._assert_response(response, valid_responses)
         return response
@@ -94,6 +95,3 @@ class _TemporalLockClient:
         """
         assert self._acquired in (True, False)  # Fail if lock() wasn't called
         return self._acquired
-
-
-LockClient = _TemporalLockClient
