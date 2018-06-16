@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source $(dirname $0)/../shell/tcpnetlock.sh
+source $(dirname $0)/../bin/tcpnetlock-functions.sh
 
 lock_in_bg
 
