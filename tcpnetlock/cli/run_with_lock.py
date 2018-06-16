@@ -107,6 +107,41 @@ class Main:
                                   "You must specify the lock name with --lock-name")
                 sys.exit(self.ERR_INVALID_OPTIONS)
 
+    def start_keepalive_thread(self, lock_client: client.LockClient):
+        keepalive_queue = queue.Queue()
+
+        def loop_keepalives():
+            while True:
+                logger.debug("Sleeping for %s before sending keep-alive", self.args.keep_alive_secs)
+                for _ in range(self.args.keep_alive_secs):
+                    try:
+                        msg = keepalive_queue.get(block=True, timeout=1)
+                        if msg is None:
+                            logger.info("Shutting down keepalive thread...")
+                            return
+                        else:
+                            logger.warning("Invalid message '%s' received from Queue. This is rare.", msg)
+                    except queue.Empty:
+                        pass
+                logger.info("Sending keepalive")
+                lock_client.keepalive()
+
+        keepalive_thread = threading.Thread(target=loop_keepalives, daemon=True)
+        keepalive_thread.start()
+
+        return keepalive_thread, keepalive_queue
+
+    def stop_keepalive_thread(self, keepalive_thread, keepalive_queue):
+        if keepalive_thread is None or keepalive_queue is None:
+            return
+        try:
+            keepalive_queue.put(None)
+            keepalive_thread.join(2)
+            if keepalive_thread.is_alive():
+                logger.warning("keepalive_thread still alive: %s", keepalive_thread)
+        except:
+            logger.warning("Error ocurred while stopping background thread")
+
     def run(self):
         self.create_parser()
         self.create_args()
@@ -127,26 +162,10 @@ class Main:
             sys.exit(self.ERR_LOG_NOT_GRANTED)
 
         # --- Send keepalive from thread
-        keepalive_thread = None
-        keepalive_queue = None
         if self.args.keep_alive:
-            keepalive_queue = queue.Queue()
-            def loop_keepalives():
-                while True:
-                    logger.debug("Sleeping for %s before sending keep-alive", self.args.keep_alive_secs)
-                    for _ in range(self.args.keep_alive_secs):
-                        try:
-                            msg = keepalive_queue.get(block=True, timeout=1)
-                            if msg is None:
-                                logger.info("Shutting down keepalive thread...")
-                                return
-                        except queue.Empty:
-                            pass
-                    logger.info("Sending keepalive")
-                    lock_client.keepalive()
-
-            keepalive_thread = threading.Thread(target=loop_keepalives, daemon=True)
-            keepalive_thread.start()
+            keepalive_thread, keepalive_queue = self.start_keepalive_thread(lock_client)
+        else:
+            keepalive_thread = keepalive_queue = None
 
         # --- Call command
         logger.info("Lock '%s' was granted. Proceeding with command '%s'", self.args.lock_name, self.args.command)
@@ -164,17 +183,12 @@ class Main:
         except KeyboardInterrupt:
             pass
 
-        try:
-            # --- Finish thread
-            if keepalive_thread:
-                keepalive_queue.put(None)
-                keepalive_thread.join(2)
-                if keepalive_thread.is_alive():
-                    logger.warning("keepalive_thread still alive: %s", keepalive_thread)
-        finally:
-            # Release AFTER keepalive thread is stopped. Otherwise, the 2 threads could be concurrently reading/writing
-            #  to the socket
-            lock_client.release()
+        # --- Cleanup
+        self.stop_keepalive_thread(keepalive_thread, keepalive_queue)
+
+        # Release AFTER keepalive thread is stopped.
+        # Otherwise, the 2 threads could be concurrently reading/writing to the socket
+        lock_client.release()
 
         # --- Exit with same 'exit status' of the process we have just ran
         if completed_process:
