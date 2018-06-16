@@ -69,6 +69,18 @@ def test_connect_and_get_lock_works(lock_server):
     client.close()
 
 
+def test_connect_and_get_lock_with_client_id_works(lock_server):
+    """Test that a lock can be acquired"""
+    name = uuid.uuid4().hex
+    client_id = uuid.uuid4().hex
+
+    client = LockClient(client_id=client_id)
+    client.connect()
+    acquired = client.lock(name)
+    assert acquired
+    client.close()
+
+
 def test_connect_and_get_lock_works(lock_server):
     """Test that a lock can be acquired"""
     client = LockClient()

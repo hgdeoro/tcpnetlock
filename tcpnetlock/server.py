@@ -48,6 +48,7 @@ ACTION_PING = '.ping'
 ACTION_KEEPALIVE = '.keepalive'
 
 VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
+VALID_CLIENT_ID_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
 class Holder:
@@ -119,8 +120,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         binary_data = bytearray()
         while True:
             action = utils.try_get_line(self.request, binary_data, timeout=1.0)
-            logger.debug("[%s] action: '%s'", self._lock_name, action)
             if action:
+                logger.info("Action: '%s' for lock %s", action, holder)
                 binary_data = bytearray()
                 if action == ACTION_RELEASE:
                     logger.debug("Releasing lock: %s", holder)
@@ -166,21 +167,26 @@ class TCPHandler(socketserver.BaseRequestHandler):
             self._handle_ping()
             return
 
-        if not VALID_LOCK_NAME_RE.match(line):
+        # Not a special string? Then it's a lock name (plus optional client-id)
+        tokens = line.split(':')
+        try:
+            (self._lock_name, client_id) = tokens
+        except ValueError:
+            (self._lock_name, client_id) = tokens[0], None
+
+        if not VALID_LOCK_NAME_RE.match(self._lock_name):
             self._handle_invalid_lock_hame()
             return
 
-        # Not a special string? Then it's a lock name
-        self._lock_name = line
-        del line
-
+        # Get the holder
         self.GLOBAL_LOCK.acquire()
         try:
             lock_holder = self.LOCKS[self._lock_name]
         finally:
             self.GLOBAL_LOCK.release()
 
-        granted = lock_holder.try_acquire(self._lock_name, 'None')
+        # Lock it
+        granted = lock_holder.try_acquire(self._lock_name, client_id)
         if granted:
             logger.debug("Got lock :)")
             self._handle_lock(lock_holder)

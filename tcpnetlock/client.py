@@ -14,7 +14,7 @@ class LockClient:
     of the real client.
     """
 
-    def __init__(self, host='localhost', port=9999):
+    def __init__(self, host='localhost', port=9999, client_id=None):
         """
         Creates a client to connect to the server.
 
@@ -25,11 +25,19 @@ class LockClient:
         self._port = port
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._acquired = None
+        self._client_id = client_id
+        if client_id:
+            assert self.valid_client_id(client_id), "Invalid client_id: {client_id}".format(client_id=client_id)
 
     @staticmethod
     def valid_lock_name(lock_name):
         """Returns True if the provided lock name is valid"""
         return bool(server.VALID_LOCK_NAME_RE.match(lock_name))
+
+    @staticmethod
+    def valid_client_id(client_id):
+        """Returns True if the provided client_id is valid"""
+        return bool(server.VALID_CLIENT_ID_RE.match(client_id))
 
     @staticmethod
     def _assert_response(response: str, valid_response_codes):
@@ -39,7 +47,8 @@ class LockClient:
                 response=response, valid_response_codes=valid_response_codes
             )
 
-    def _send(self, message):
+    def _send(self, message: str):
+        assert message
         self._socket.send((message + '\n').encode())
 
     def _read_response(self, valid_responses):
@@ -61,7 +70,11 @@ class LockClient:
         """
         assert self.valid_lock_name(name)
         logger.info("Trying to acquire lock '%s'...", name)
-        self._send(name)
+        if self._client_id:
+            message = "{name}:{client_id}".format(name=name, client_id=self._client_id)
+        else:
+            message = name
+        self._send(message)
         response = self._read_response([server.RESPONSE_OK, server.RESPONSE_LOCK_FAILED, server.RESPONSE_ERR])
         self._acquired = (response == server.RESPONSE_OK)
         logging.info("Lock %s acquired: %s", name, self._acquired)
