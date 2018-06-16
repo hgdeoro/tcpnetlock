@@ -1,5 +1,6 @@
 import logging
 import socket
+import sys
 import time
 
 from tcpnetlock import server
@@ -79,6 +80,7 @@ class LockClient:
         response = self._read_response([server.RESPONSE_OK, server.RESPONSE_LOCK_FAILED, server.RESPONSE_ERR])
         self._acquired = (response == server.RESPONSE_OK)
         logging.info("Lock %s acquired: %s", name, self._acquired)
+        logging.debug("LOCK_RESULT,LOCK:%s,ACQUIRED:%s", name, self._acquired)  # This is easier to parse from cli
         return self._acquired
 
     def server_shutdown(self):
@@ -138,7 +140,11 @@ def main():
 
     client = LockClient(args.host, args.port, client_id=args.client_id)
     client.connect()
-    client.lock(args.lock_name)
+    granted = client.lock(args.lock_name)
+    if not granted:
+        logger.debug("Lock not granted. Exiting...")
+        sys.exit(9)
+
     if args.keep_alive:
         while True:
             logger.debug("Sleeping for %s... (after that, will send a keep-alive)", args.keep_alive_secs)
