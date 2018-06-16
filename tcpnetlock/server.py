@@ -69,9 +69,8 @@ class Holder:
         self._lock.release()
 
     def __str__(self):
-        return "Lock {name}, client {client}, age{age}".format(name=self._lock_name,
-                                                               client=self._client_id,
-                                                               age=int(time.time() - self._timestamp))
+        return "Lock '{name}', client '{client}', age: {age}".format(
+            name=self._lock_name, client=self._client_id, age=int(time.time() - self._timestamp))
 
 
 class LockServer(socketserver.ThreadingTCPServer):
@@ -133,7 +132,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                     logger.debug("Received keepalive from client. Lock: %s", holder)
                     self._send(RESPONSE_STILL_ALIVE)
                 else:
-                    logger.debug("Unknown action '%s' for lock: ", action, holder)
+                    logger.debug("Unknown action '%s' for lock: %s", action, holder)
 
     def _handle_server_shutdown(self):
         # FIXME: assert connections came from localhost
