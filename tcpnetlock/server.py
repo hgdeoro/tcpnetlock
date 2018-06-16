@@ -3,6 +3,7 @@ import logging
 import re
 import socketserver
 import threading
+import time
 
 from tcpnetlock import utils
 
@@ -47,6 +48,30 @@ ACTION_PING = '.ping'
 VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
+class Holder:
+    def __init__(self):
+        self._lock = self._lock = threading.Lock()
+        self._lock_name = None
+        self._timestamp = None
+        self._client_id = None
+
+    def try_acquire(self, lock_name, client_id):
+        granted = self._lock.acquire(blocking=False)
+        if granted:
+            self._timestamp = time.time()
+            self._client_id = client_id
+            self._lock_name = lock_name
+        return granted
+
+    def release(self):
+        self._lock.release()
+
+    def __str__(self):
+        return "Lock {name}, client {client}, age{age}".format(name=self._lock_name,
+                                                               client=self._client_id,
+                                                               age=int(time.time() - self._timestamp))
+
+
 class LockServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
 
@@ -56,7 +81,7 @@ class LockServer(socketserver.ThreadingTCPServer):
 
 class TCPHandler(socketserver.BaseRequestHandler):
     GLOBAL_LOCK = threading.Lock()
-    LOCKS = collections.defaultdict(threading.Lock)
+    LOCKS = collections.defaultdict(Holder)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,19 +98,19 @@ class TCPHandler(socketserver.BaseRequestHandler):
             if lock_name:
                 return lock_name
 
-    def _handle_lock(self, lock):
+    def _handle_lock(self, holder: Holder):
         try:
             try:
-                self._real_handle_lock(lock)
+                self._real_handle_lock(holder)
             except utils.ClientDisconnected:
                 logger.info("[%s] Client disconnected", self._lock_name)
         finally:
-            lock.release()
+            holder.release()
 
     def _send(self, message):
         self.request.send((message + '\n').encode())
 
-    def _real_handle_lock(self, lock):
+    def _real_handle_lock(self, holder: Holder):
         """
         While control is in this method, the lock is held
         """
@@ -147,14 +172,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
         self.GLOBAL_LOCK.acquire()
         try:
-            lock = self.LOCKS[self._lock_name]
+            lock_holder = self.LOCKS[self._lock_name]
         finally:
             self.GLOBAL_LOCK.release()
 
-        locked = lock.acquire(blocking=False)
-        if locked:
+        granted = lock_holder.try_acquire(self._lock_name, 'None')
+        if granted:
             logger.debug("Got lock :)")
-            self._handle_lock(lock)
+            self._handle_lock(lock_holder)
         else:
             logger.debug("Couldn't get lock :(")
             self._send(RESPONSE_LOCK_FAILED)  # FIXME: what if client had closed the socket?
