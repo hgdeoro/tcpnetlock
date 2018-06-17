@@ -30,7 +30,12 @@ Network lock based on TCP sockets
 Features
 --------
 
-* TODO
+* Runs on Python 3.6 / Python 3.5
+* Do not require external libraries
+* Ready to use Docker image (based on Alpine)
+* Includes server and python client
+* Includes utility to run Linux commands while holding the lock
+* Simple protocol: you can get a lock even with `nc`
 
 Credits
 -------

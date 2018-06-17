@@ -7,7 +7,7 @@ from tcpnetlock import server
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--listen", default='localhost')
-    parser.add_argument("--port", default=9999, type=int)
+    parser.add_argument("--port", default=server.LockServer.DEFAULT_PORT, type=int)
     parser.add_argument("--debug", default=False, action='store_true')
     args = parser.parse_args()
 

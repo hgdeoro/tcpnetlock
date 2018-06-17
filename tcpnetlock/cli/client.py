@@ -12,7 +12,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("lock_name")
     parser.add_argument("--host", default='localhost')
-    parser.add_argument("--port", default=9999, type=int)
+    parser.add_argument("--port", default=client.LockClient.DEFAULT_PORT, type=int)
     parser.add_argument("--client-id", default=None)
     parser.add_argument("--keep-alive", default=False, action='store_true')
     parser.add_argument("--keep-alive-secs", default=15, type=int)

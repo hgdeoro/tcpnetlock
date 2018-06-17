@@ -5,6 +5,7 @@
 # --------------------------------------------------------------------------------------------------------------
 #
 # ATTENTION: this script should be SOURCED. Here we define 2 functions to interact to TPPNetLock from shell script
+# ATTENTION: this script is deprecated. `tcpnetlock.cli.run_with_lock` is much better and is covered by tests
 #
 # lock_in_bg() : tries to acquire lock. EXITS if lock can't be acquired, return control back if lock was granted.
 #                A process is sent to background (to keep the TCP connection to the server, and thus, keep
@@ -21,7 +22,7 @@
 #
 # Configuration of the CLIENT is done through environment variables:
 #
-# - TCPNETLOCK_PORT (defaults to 9999)
+# - TCPNETLOCK_PORT (defaults to 7654)
 # - TCPNETLOCK_HOST (defauls to 'localhost')
 # - TCPNETLOCK_CLIENT_ID (default derivated from shell script filename + hostname)
 # - TCPNETLOCK_LOCK_NAME (default derivated from shell script filename)
@@ -48,7 +49,7 @@ function lock_in_bg() {
 
     this_file_name_safe="$(echo $(basename $0) | tr . - | sed 's/[^0-9a-zA-Z_-]*//g')"
     # configuration variables (can be overidden by user)
-	export TCPNETLOCK_PORT=${TCPNETLOCK_PORT:-9999}
+	export TCPNETLOCK_PORT=${TCPNETLOCK_PORT:-76543}
 	export TCPNETLOCK_HOST=${TCPNETLOCK_HOST:-localhost}
 	export TCPNETLOCK_CLIENT_ID=${TCPNETLOCK_CLIENT_ID:-"${this_file_name_safe}-at-$(hostname)"}
 	export TCPNETLOCK_LOCK_NAME=${TCPNETLOCK_LOCK_NAME:-${this_file_name_safe}}

@@ -23,6 +23,19 @@ you through the process.
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
 
+Docker image
+------------
+
+To run it using Docker, get the image::
+
+    $ docker image pull hgdeoro/tcpnetlock
+
+
+And then launch a container::
+
+    $ docker run --rm -ti -p 7654:7654 hgdeoro/tcpnetlock
+
+
 From sources
 ------------
 
