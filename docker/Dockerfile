@@ -1,11 +1,16 @@
 FROM alpine:3.7
 
+ARG TNS_VERSION
+
 RUN apk add --no-cache python3
+RUN test -n "${TNS_VERSION}"
 
 RUN wget https://bootstrap.pypa.io/get-pip.py -O get-pip.py && \
     python3 get-pip.py && \
-    pip install tcpnetlock && \
     rm -rf .cache get-pip.py
+
+RUN pip install tcpnetlock==${TNS_VERSION} && \
+    rm -rf .cache
 
 EXPOSE 7654
 
