@@ -6,7 +6,6 @@ import time
 import uuid
 from unittest import mock
 
-from tcpnetlock.client import LockClient
 from .test_utils import lock_server
 
 assert lock_server
@@ -15,14 +14,14 @@ assert lock_server
 def test_server_is_alive(lock_server):
     """Test the test server is actually running"""
     assert lock_server.is_alive()
-    client = LockClient()
+    client = lock_server.get_client()
     client.connect()
     client.ping()
 
 
 def test_connect_and_get_lock_works(lock_server):
     """Test that a lock can be acquired"""
-    client = LockClient()
+    client = lock_server.get_client()
     client.connect()
     acquired = client.lock(uuid.uuid4().hex)
     assert acquired
@@ -34,7 +33,7 @@ def test_connect_and_get_lock_with_client_id_works(lock_server):
     name = uuid.uuid4().hex
     client_id = uuid.uuid4().hex
 
-    client = LockClient(client_id=client_id)
+    client = lock_server.get_client(client_id=client_id)
     client.connect()
     acquired = client.lock(name)
     assert acquired
@@ -43,7 +42,7 @@ def test_connect_and_get_lock_with_client_id_works(lock_server):
 
 def test_connect_and_get_lock_works(lock_server):
     """Test that a lock can be acquired"""
-    client = LockClient()
+    client = lock_server.get_client()
     client.connect()
     acquired = client.lock(uuid.uuid4().hex)
     for _ in range(5):
@@ -54,13 +53,13 @@ def test_connect_and_get_lock_works(lock_server):
 
 def test_get_two_different_lock(lock_server):
     """Test that two different locks can be acquired"""
-    client_1 = LockClient()
+    client_1 = lock_server.get_client()
     client_1.connect()
     acquired = client_1.lock(uuid.uuid4().hex)
     assert acquired
     client_1.close()
 
-    client_2 = LockClient()
+    client_2 = lock_server.get_client()
     client_2.connect()
     acquired = client_2.lock(uuid.uuid4().hex)
     assert acquired
@@ -71,12 +70,12 @@ def test_lock_twice_fails(lock_server):
     """Test that a locks can NOT be acquired twice"""
     name = uuid.uuid4().hex
 
-    client_1 = LockClient()
+    client_1 = lock_server.get_client()
     client_1.connect()
     acquired = client_1.lock(name)
     assert acquired
 
-    client_2 = LockClient()
+    client_2 = lock_server.get_client()
     client_2.connect()
     acquired = client_2.lock(name)
     assert not acquired
@@ -90,7 +89,7 @@ def test_release_lock_and_re_acquire(lock_server):
     name = uuid.uuid4().hex
 
     # acquire lock
-    client_1 = LockClient()
+    client_1 = lock_server.get_client()
     client_1.connect()
     acquired = client_1.lock(name)
     assert acquired
@@ -99,7 +98,7 @@ def test_release_lock_and_re_acquire(lock_server):
     client_1.close()
 
     # re-acquire same lock
-    client_2 = LockClient()
+    client_2 = lock_server.get_client()
     client_2.connect()
     acquired = client_2.lock(name)
     assert acquired
@@ -111,7 +110,7 @@ def test_lock_is_released_when_client_closes_connection(lock_server):
     name = uuid.uuid4().hex
 
     # acquire lock
-    client_1 = LockClient()
+    client_1 = lock_server.get_client()
     client_1.connect()
     acquired = client_1.lock(name)
     assert acquired
@@ -121,7 +120,7 @@ def test_lock_is_released_when_client_closes_connection(lock_server):
     # re-acquire same lock
     acquired = False
     for _ in range(20):
-        client_2 = LockClient()
+        client_2 = lock_server.get_client()
         client_2.connect()
         acquired = client_2.lock(name)
         if not acquired:
@@ -138,7 +137,7 @@ def test_server_rejects_invalid_lock_name(lock_server):
     )
 
     for invalid in invalid_names:
-        client = LockClient()
+        client = lock_server.get_client()
         client.valid_lock_name = mock.MagicMock(return_value=True)
         client.connect()
         acquired = client.lock(invalid)
@@ -158,7 +157,7 @@ def test_server_accept_valid_lock_name(lock_server):
     )
 
     for valid in valid_names:
-        client = LockClient()
+        client = lock_server.get_client()
         client.valid_lock_name = mock.MagicMock(return_value=True)
         client.connect()
         acquired = client.lock(valid)

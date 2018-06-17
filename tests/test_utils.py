@@ -7,38 +7,55 @@ from tcpnetlock.client import LockClient
 from tcpnetlock.server import LockServer
 
 
-def _wait_for_server():
-    """
-    Busy-waits until the test server is responding
-    """
-    client = LockClient()
-    for _ in range(10):
-        try:
-            client.connect()
-            break
-        except ConnectionRefusedError:
-            time.sleep(0.1)
-    client.ping()
-    client.close()
-
-
 @pytest.fixture(scope="module")
 def lock_server():
     """
     Fixture, returns the server process running a LockServer ready to use
     """
-    def start_server():
-        # FIXME: get a random port
-        server = LockServer("localhost", 9999)
-        server.serve_forever()
+    class TestServerThread(threading.Thread):
+        def __init__(self, initial_port=7654):
+            super().__init__(daemon=True)
+            server = None
+            for port in range(initial_port, initial_port + 1000):
+                try:
+                    server = LockServer("localhost", port)
+                except OSError as err:
+                    print("err.errno: {}".format(err.errno))
+            assert server, "Could not bind server"
+            self.server = server
+            self.port = port
 
-    server_thread = threading.Thread(target=start_server, daemon=True)
+        def wait_for_server(self):
+            """Busy-waits until the test server is responding"""
+            connected = False
+            lock_client = LockClient("localhost", self.port)
+            for _ in range(50):
+                try:
+                    lock_client.connect()
+                    connected = True
+                    break
+                except ConnectionRefusedError:
+                    time.sleep(0.1)
+            assert connected, "Couldn't connect to test server after many tries"
+            lock_client.ping()
+            lock_client.close()
+
+        def get_client(self, **kwargs):
+            """Returns a client instance to connect to test server"""
+            host = kwargs.pop('host', 'localhost')
+            port = kwargs.pop('port', self.port)
+            return LockClient(host, port, **kwargs)
+
+        def run(self):
+            self.server.serve_forever()
+
+    server_thread = TestServerThread()
     server_thread.start()
-    _wait_for_server()  # wait until server is ready
+    server_thread.wait_for_server()
 
     yield server_thread
 
-    client = LockClient()
+    client = server_thread.get_client()
     client.connect()
     client.server_shutdown()
     client.close()
