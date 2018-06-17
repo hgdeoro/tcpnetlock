@@ -134,12 +134,13 @@ To upload to test.pypi.org::
     $ ( rm -rf dist/ build/ ; \
         python3 setup.py sdist bdist_wheel ; \
         twine upload -r pypitest dist/* ; \
+        VERSION=$(python setup.py --version) ; \
         deactivate ; \
         cd / ; \
         export VID=$(uuidgen) ; \
         virtualenv -p python3.6 /tmp/venv-$VID ; \
         source /tmp/venv-$VID/bin/activate ; \
-        pip install --index-url https://test.pypi.org/simple/ tcpnetlock ; \
+        pip install --index-url https://test.pypi.org/simple/ tcpnetlock==${VERSION}; \
         )
 
 To upload to pypi.org::
@@ -156,4 +157,14 @@ To install locally in a brand new virtualenv::
         virtualenv -p python3.6 /tmp/venv-$VID ; \
         source /tmp/venv-$VID/bin/activate ; \
         pip install ./dist/tcpnetlock*.whl ; \
+        )
+
+To build the Docker image::
+
+    $ ( VERSION=$(python setup.py --version) ; \
+        docker build --build-arg TNS_VERSION=v${VERSION} \
+            -f docker/Dockerfile docker/ \
+            -t hgdeoro/tcpnetlock:v${VERSION} \
+            -t hgdeoro/tcpnetlock:latest ; \
+        docker push hgdeoro/tcpnetlock ;\
         )
