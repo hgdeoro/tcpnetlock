@@ -15,10 +15,10 @@ The received string is used as lock name.
 
 If the lock is granted, it is valid until the client release it, or until the TCP connection is closed.
 
-If the lock can't be granted, a response is sent to the client and the TCP connection is closed.
+If the lock can't be granted (it's being held by another client), a response is sent and the TCP connection is closed.
 
 
-Detail of the current implementation:
+The simplest way to use:
 
     1. SERVER accept TCP connection
     2. CLIENT send the lock name (utf-8 encoded), like: 'lock-name\n'
@@ -78,8 +78,9 @@ class Holder:
 
 class LockServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
+    DEFAULT_PORT = 7654
 
-    def __init__(self, host='localhost', port=9999):
+    def __init__(self, host='localhost', port=DEFAULT_PORT):
         super().__init__((host, port), TCPHandler)
 
 
@@ -107,7 +108,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             try:
                 self._real_handle_lock(holder)
             except utils.ClientDisconnected:
-                logger.info("[%s] Client disconnected", self._lock_name)
+                logger.info("Client disconnected. Lock info: %s", holder)
         finally:
             holder.release()
 
@@ -123,10 +124,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
         while True:
             action = utils.try_get_line(self.request, binary_data, timeout=1.0)
             if action:
-                logger.info("Action: '%s' for lock %s", action, holder)
+                logger.debug("Action: '%s' for lock %s", action, holder)
                 binary_data = bytearray()
                 if action == ACTION_RELEASE:
-                    logger.debug("Releasing lock: %s", holder)
+                    logger.info("Releasing lock: %s", holder)
                     self._send(RESPONSE_RELEASED)
                     self.request.close()
                     # FIXME: at this point we send OK to the client, but internally the lock is STILL HELD
@@ -135,7 +136,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                     logger.debug("Received keepalive from client. Lock: %s", holder)
                     self._send(RESPONSE_STILL_ALIVE)
                 else:
-                    logger.debug("Unknown action '%s' for lock: %s", action, holder)
+                    logger.warning("Unknown action '%s' for lock: %s", action, holder)
 
     def _handle_server_shutdown(self):
         # FIXME: assert connections came from localhost
@@ -147,7 +148,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self._send(RESPONSE_PONG)  # FIXME: what if client had closed the socket?
         self.request.close()
 
-    def _handle_invalid_lock_hame(self):
+    def _handle_invalid_lock_hame(self, lock_name):
+        logger.warning("Received invalid lock name: '%s'", lock_name)
         self._send(RESPONSE_ERR + ':invalid lock name')  # FIXME: what if client had closed the socket?
         self.request.close()
 
@@ -155,7 +157,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         try:
             line = self._get_line()
         except utils.ClientDisconnected:
-            logger.info("Client disconnected")
+            logger.info("Client disconnected.")
             self.request.close()
             return
 
@@ -177,23 +179,26 @@ class TCPHandler(socketserver.BaseRequestHandler):
             (self._lock_name, client_id) = tokens[0], None
 
         if not VALID_LOCK_NAME_RE.match(self._lock_name):
-            self._handle_invalid_lock_hame()
+            self._handle_invalid_lock_hame(self._lock_name)
             return
 
         # Get the holder
+        logger.debug('Trying to acquire GLOBAL_LOCK...')
         self.GLOBAL_LOCK.acquire()
+        logger.debug('Got GLOBAL_LOCK')
         try:
             lock_holder = self.LOCKS[self._lock_name]
         finally:
             self.GLOBAL_LOCK.release()
+            logger.debug('Released GLOBAL_LOCK')
 
         # Lock it
         granted = lock_holder.try_acquire(self._lock_name, client_id)
         if granted:
-            logger.debug("Got lock :)")
+            logger.info("Lock acquired: %s", lock_holder)
             self._handle_lock(lock_holder)
         else:
-            logger.debug("Couldn't get lock :(")
+            logger.info("Lock NOT acquired: %s", lock_holder)
             self._send(RESPONSE_LOCK_FAILED)  # FIXME: what if client had closed the socket?
 
         self.request.close()
