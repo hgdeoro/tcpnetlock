@@ -7,11 +7,12 @@ import uuid
 from unittest import mock
 
 from .test_utils import lock_server
+from .test_utils import ServerThread
 
 assert lock_server
 
 
-def test_server_is_alive(lock_server):
+def test_server_is_alive(lock_server: ServerThread):
     """Test the test server is actually running"""
     assert lock_server.is_alive()
     client = lock_server.get_client()

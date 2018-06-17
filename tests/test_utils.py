@@ -7,7 +7,7 @@ from tcpnetlock.client import LockClient
 from tcpnetlock.server import LockServer
 
 
-class TestServerThread(threading.Thread):
+class ServerThread(threading.Thread):
     def __init__(self, initial_port=7654):
         super().__init__(daemon=True)
         server = None
@@ -51,7 +51,7 @@ def lock_server():
     Fixture, returns the server process running a LockServer ready to use
     """
 
-    server_thread = TestServerThread()
+    server_thread = ServerThread()
     server_thread.start()
     server_thread.wait_for_server()
 
