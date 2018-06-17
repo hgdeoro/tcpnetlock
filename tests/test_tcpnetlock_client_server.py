@@ -1,55 +1,15 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""
+Tests for `tcpnetlock.client` and `tcpnetlock.server` packages.
+"""
 
-"""Tests for `tcpnetlock` package."""
-import threading
 import time
 import uuid
 from unittest import mock
 
-import pytest
-
 from tcpnetlock.client import LockClient
-from tcpnetlock.server import LockServer
+from .test_utils import lock_server
 
-
-def _wait_for_server():
-    """
-    Busy-waits until the test server is responding
-    """
-    client = LockClient()
-    for _ in range(10):
-        try:
-            client.connect()
-            break
-        except ConnectionRefusedError:
-            time.sleep(0.1)
-    client.ping()
-    client.close()
-
-
-@pytest.fixture(scope="module")
-def lock_server():
-    """
-    Fixture, returns the server process running a LockServer ready to use
-    """
-    def start_server():
-        server = LockServer("localhost", 9999)
-        server.serve_forever()
-
-    server_thread = threading.Thread(target=start_server, daemon=True)
-    server_thread.start()
-    _wait_for_server()  # wait until server is ready
-
-    yield server_thread
-
-    client = LockClient()
-    client.connect()
-    client.server_shutdown()
-    client.close()
-
-    server_thread.join(5)
-    assert not server_thread.is_alive(), "TEST Server didn't shut down cleanly"
+assert lock_server
 
 
 def test_server_is_alive(lock_server):
@@ -125,7 +85,7 @@ def test_lock_twice_fails(lock_server):
     client_2.close()
 
 
-def test_released_lock_and_be_re_acquired(lock_server):
+def test_release_lock_and_re_acquire(lock_server):
     """Test that a locks can be acquired again after it's released"""
     name = uuid.uuid4().hex
 
@@ -146,8 +106,8 @@ def test_released_lock_and_be_re_acquired(lock_server):
     client_2.close()
 
 
-def test_lock_released_when_client_closes_connection(lock_server):
-    """Test that a locks can be acquired again after it's released"""
+def test_lock_is_released_when_client_closes_connection(lock_server):
+    """Test that the server releases the lock if the socket connection is suddenly closed"""
     name = uuid.uuid4().hex
 
     # acquire lock
@@ -170,7 +130,7 @@ def test_lock_released_when_client_closes_connection(lock_server):
 
 
 def test_server_rejects_invalid_lock_name(lock_server):
-    """Test that a locks can be acquired again after it's released"""
+    """Test that server do not accept invalid lock name"""
     invalid_names = (
         '.starts-with-space',
         'contains space',
@@ -187,6 +147,7 @@ def test_server_rejects_invalid_lock_name(lock_server):
 
 
 def test_server_accept_valid_lock_name(lock_server):
+    """Test that server DO accept valid lock name"""
     valid_names = (
         'valid-name',
         'valid-name-8',
