@@ -53,7 +53,7 @@ VALID_CLIENT_ID_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 VALID_CHARS_IN_LOCK_NAME_RE = re.compile(r'[a-zA-Z0-9_-]')
 
 
-class Holder:
+class Lock:
     def __init__(self):
         self._lock = self._lock = threading.Lock()
         self._lock_name = None
@@ -76,7 +76,13 @@ class Holder:
             name=self._lock_name, client=self._client_id, age=int(time.time() - self._timestamp))
 
 
-class LockServer(socketserver.ThreadingTCPServer):
+class Action:
+    def __init__(self, action: str, params: dict):
+        self.action = action
+        self.params = params
+
+
+class TCPServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     DEFAULT_PORT = 7654
 
@@ -84,17 +90,12 @@ class LockServer(socketserver.ThreadingTCPServer):
         super().__init__((host, port), TCPHandler)
 
 
-class TCPHandler(socketserver.BaseRequestHandler):
-    GLOBAL_LOCK = threading.Lock()
-    LOCKS = collections.defaultdict(Holder)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._lock_name = None
-
+class BaseTCPHandler(socketserver.BaseRequestHandler):
+    # FIXME: rename to readline()
+    # FIXME: use socket.makefile()
     def _get_line(self) -> str:
         """
-        Reads (blocking) until we got a lock name
+        Reads (blocking) until we got a line
         :return: lock name
         """
         binary_data = bytearray()
@@ -103,7 +104,27 @@ class TCPHandler(socketserver.BaseRequestHandler):
             if lock_name:
                 return lock_name
 
-    def _handle_lock(self, holder: Holder):
+    def _send(self, message):
+        self.request.send((message + '\n').encode())
+
+    # FIXME: implement this
+    # def get_action(self):
+    #     pass
+
+
+class TCPHandler(BaseTCPHandler):
+
+    GLOBAL_LOCK = threading.Lock()
+    """Global lock to serialize modification of LOCKS"""
+
+    LOCKS = collections.defaultdict(Lock)
+    """This dict contains the Lock instances"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._lock_name = None
+
+    def _handle_lock(self, holder: Lock):
         try:
             try:
                 self._real_handle_lock(holder)
@@ -112,10 +133,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         finally:
             holder.release()
 
-    def _send(self, message):
-        self.request.send((message + '\n').encode())
-
-    def _real_handle_lock(self, holder: Holder):
+    def _real_handle_lock(self, holder: Lock):
         """
         While control is in this method, the lock is held
         """
@@ -157,9 +175,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
         try:
             line = self._get_line()
         except utils.ClientDisconnected:
-            logger.info("Client disconnected.")
+            logger.info("Client disconnected before getting line.")
             self.request.close()
             return
+
+        # FIXME: other exceptions we should handle here?
 
         logger.debug("Received line: '%s'", line)
 

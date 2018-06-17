@@ -14,7 +14,7 @@ class LockClient:
     of the real client.
     """
 
-    DEFAULT_PORT = server.LockServer.DEFAULT_PORT
+    DEFAULT_PORT = server.TCPServer.DEFAULT_PORT
 
     def __init__(self, host='localhost', port=DEFAULT_PORT, client_id=None, print_marks=False):
         """

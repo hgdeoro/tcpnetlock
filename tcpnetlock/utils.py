@@ -25,6 +25,7 @@ def try_get_line(sock: socket.socket, binary_data: bytearray, timeout=None):
     * timeout=None -> disable timeout and red (will BLOCK until we get data)
     * timeout=x -> set timeout of x and red
     """
+    # FIXME: use socket.makefile()
     # We need 'recv_size = 1' because we don't handle (yet) the case were client sends 'lock1\nrelease\n'
     # FIXME: re-implement parser, in way that handles correctly a message like 'lock\nrelease\n' with recv(16)
     recv_size = 1

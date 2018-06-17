@@ -32,7 +32,7 @@ class Main:
                             default='localhost')
 
         parser.add_argument("--port",
-                            default=server.LockServer.DEFAULT_PORT,
+                            default=server.TCPServer.DEFAULT_PORT,
                             type=int)
 
         parser.add_argument("--client-id",

@@ -7,7 +7,7 @@ from tcpnetlock import server
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--listen", default='localhost')
-    parser.add_argument("--port", default=server.LockServer.DEFAULT_PORT, type=int)
+    parser.add_argument("--port", default=server.TCPServer.DEFAULT_PORT, type=int)
     parser.add_argument("--debug", default=False, action='store_true')
     args = parser.parse_args()
 
@@ -16,7 +16,7 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
 
-    with server.LockServer(args.listen, args.port) as lock_server:
+    with server.TCPServer(args.listen, args.port) as lock_server:
         logging.info("Started listening on %s:%s", args.listen, args.port)
         lock_server.serve_forever()
 

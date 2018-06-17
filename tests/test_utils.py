@@ -5,7 +5,7 @@ import uuid
 import pytest
 
 from tcpnetlock.client import LockClient
-from tcpnetlock.server import LockServer
+from tcpnetlock.server import TCPServer
 
 
 class ServerThread(threading.Thread):
@@ -14,7 +14,7 @@ class ServerThread(threading.Thread):
         server = None
         for port in range(initial_port, initial_port + 1000):
             try:
-                server = LockServer("localhost", port)
+                server = TCPServer("localhost", port)
             except OSError as err:
                 print("err.errno: {}".format(err.errno))
         assert server, "Could not bind server"
@@ -49,7 +49,7 @@ class ServerThread(threading.Thread):
 @pytest.fixture(scope="module")
 def lock_server() -> ServerThread:
     """
-    Fixture, returns the server process running a LockServer ready to use
+    Fixture, returns the server process running a TCPServer ready to use
     """
 
     server_thread = ServerThread()
