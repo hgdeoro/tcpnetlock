@@ -66,9 +66,9 @@ class Main:
 
         self.parser = parser
 
-    def create_args(self):
+    def create_args(self, args):
         assert self.parser
-        self.args = self.parser.parse_args()
+        self.args = self.parser.parse_args(args)
 
     def setup_logging(self):
         assert self.args
@@ -141,9 +141,9 @@ class Main:
         except:  # noqa: E722 we need to ignore any error
             logger.warning("Error occurred while stopping background thread")
 
-    def run(self):
+    def run(self, args):
         self.create_parser()
-        self.create_args()
+        self.create_args(args)
         self.setup_logging()
         self.validate_and_fix_parameters()
 
@@ -197,7 +197,7 @@ class Main:
 
 
 def main():
-    Main().run()
+    Main().run(args=sys.argv[1:])
 
 
 if __name__ == '__main__':
