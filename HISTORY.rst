@@ -2,6 +2,13 @@
 History
 =======
 
+0.0.7 (2018-06-17)
+------------------
+
+* Code cleanup and refactor
+* Add tests
+* Implements run_with_lock script to make really easy to use from shell scripts
+
 0.0.6 (2018-06-16)
 ------------------
 
