@@ -1,5 +1,6 @@
 import threading
 import time
+import uuid
 
 import pytest
 
@@ -46,7 +47,7 @@ class ServerThread(threading.Thread):
 
 
 @pytest.fixture(scope="module")
-def lock_server():
+def lock_server() -> ServerThread:
     """
     Fixture, returns the server process running a LockServer ready to use
     """
@@ -64,3 +65,8 @@ def lock_server():
 
     server_thread.join(5)
     assert not server_thread.is_alive(), "Server didn't shut down cleanly"
+
+
+@pytest.fixture(scope="module")
+def lock_name() -> str:
+    return str(uuid.uuid4())
