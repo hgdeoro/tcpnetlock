@@ -1,11 +1,13 @@
 import collections
 import logging
-import re
 import socket
 import socketserver
 import threading
 import time
 
+from tcpnetlock.constants import RESPONSE_ERR, RESPONSE_INVALID_REQUEST, RESPONSE_LOCK_NOT_GRANTED, RESPONSE_RELEASED, \
+    RESPONSE_SHUTTING_DOWN, RESPONSE_PONG, RESPONSE_STILL_ALIVE, ACTION_RELEASE, ACTION_SERVER_SHUTDOWN, ACTION_PING, \
+    ACTION_KEEPALIVE, VALID_LOCK_NAME_RE, RESPONSE_OK
 from tcpnetlock.utils import ClientDisconnected
 from tcpnetlock.utils import ignore_client_disconnected_exception
 
@@ -34,26 +36,6 @@ The simplest way to use:
 """
 
 logger = logging.getLogger(__name__)
-
-
-RESPONSE_OK = 'ok'
-RESPONSE_ERR = 'err'
-RESPONSE_INVALID_REQUEST = 'bad-request'
-RESPONSE_LOCK_NOT_GRANTED = 'not-granted'
-RESPONSE_RELEASED = 'released'
-RESPONSE_SHUTTING_DOWN = 'shutting-down'
-RESPONSE_PONG = 'pong'
-RESPONSE_STILL_ALIVE = 'alive'
-
-ACTION_RELEASE = 'release'
-ACTION_SERVER_SHUTDOWN = '.server-shutdown'
-ACTION_PING = '.ping'
-ACTION_KEEPALIVE = '.keepalive'
-
-VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
-VALID_CLIENT_ID_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
-
-VALID_CHARS_IN_LOCK_NAME_RE = re.compile(r'[a-zA-Z0-9_-]')
 
 NEW_LINE = '\n'.encode()
 

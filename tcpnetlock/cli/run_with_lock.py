@@ -5,6 +5,7 @@ import subprocess
 import sys
 import threading
 
+import tcpnetlock.constants
 from tcpnetlock import client
 from tcpnetlock import server
 
@@ -96,7 +97,7 @@ class Main:
             temporary = temporary.replace('.', '_')
             temporary = temporary.replace('/', '_')
             temporary = temporary.strip('_')
-            matches = server.VALID_CHARS_IN_LOCK_NAME_RE.findall(temporary)
+            matches = tcpnetlock.constants.VALID_CHARS_IN_LOCK_NAME_RE.findall(temporary)
             self.args.lock_name = ''.join(matches)
 
             logger.info("Generated lock name '%s' (from provided command '%s')", self.args.lock_name, self.args.command)
