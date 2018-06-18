@@ -17,15 +17,14 @@ def main():
     parser.add_argument("--keep-alive", default=False, action='store_true')
     parser.add_argument("--keep-alive-secs", default=15, type=int)
     parser.add_argument("--debug", default=False, action='store_true')
-    parser.add_argument("--print-marks", default=False, action='store_true')
     args = parser.parse_args()
 
-    if args.debug or args.print_marks:
+    if args.debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
 
-    lock_client = client.LockClient(args.host, args.port, client_id=args.client_id, print_marks=args.print_marks)
+    lock_client = client.LockClient(args.host, args.port, client_id=args.client_id)
     lock_client.connect()
     granted = lock_client.lock(args.lock_name)
     if not granted:

@@ -46,9 +46,9 @@ def test_server_accept_keepalives(lock_server):
     client = lock_server.get_client()
     client.connect()
     acquired = client.lock(uuid.uuid4().hex)
-    for _ in range(5):
+    for _ in range(2):
         client.keepalive()
-        time.sleep(0.5)
+        time.sleep(0.2)
     client.close()
 
 

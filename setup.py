@@ -40,7 +40,7 @@ setup(
             'run_with_lock=tcpnetlock.cli.run_with_lock:main'
         ],
     },
-    scripts=['bin/tcpnetlock-functions.sh'],
+    scripts=[],
     install_requires=requirements,
     license="GNU General Public License v3",
     long_description=readme + '\n\n' + history,

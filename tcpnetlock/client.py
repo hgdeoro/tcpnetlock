@@ -9,15 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class LockClient:
-    """
-    This is a temporal implementation of the client, with just the basic stuff to be able to develop
-    unittests for the server code. Some of this code may be used, in the future, for the implementation
-    of the real client.
-    """
-
     DEFAULT_PORT = server.TCPServer.DEFAULT_PORT
 
-    def __init__(self, host='localhost', port=DEFAULT_PORT, client_id=None, print_marks=False):
+    def __init__(self, host='localhost', port=DEFAULT_PORT, client_id=None):
         """
         Creates a client to connect to the server.
 
@@ -28,7 +22,6 @@ class LockClient:
         self._port = port
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._acquired = None
-        self._print_marks = bool(print_marks)
         if client_id:
             assert self.valid_client_id(client_id), "Invalid client_id: {client_id}".format(client_id=client_id)
         self._client_id = client_id
@@ -66,18 +59,8 @@ class LockClient:
         logger.info("Connecting to '%s:%s'...", self._host, self._port)
         try:
             self._socket.connect((self._host, self._port))
-            self._mark('CONNECTION,OK')
         except ConnectionRefusedError:
-            self._mark('CONNECTION,REFUSED')
             raise
-        except:  # noqa: E722
-            self._mark('CONNECTION,ERROR')
-            raise
-
-    def _mark(self, message, *args, **kwargs):
-        """Print easy to parse messages"""
-        if self._print_marks:
-            logging.debug("MARK," + message + ",END", *args, **kwargs)
 
     def lock(self, name: str) -> bool:
         """
@@ -97,7 +80,6 @@ class LockClient:
                                         tcpnetlock.constants.RESPONSE_ERR])
         self._acquired = (response == tcpnetlock.constants.RESPONSE_OK)
         logging.info("Lock %s acquired: %s", name, self._acquired)
-        self._mark("LOCK_RESULT,LOCK:%s,ACQUIRED:%s", name, self._acquired)
 
         return self._acquired
 
@@ -118,7 +100,6 @@ class LockClient:
         logger.info("Sending KEEPALIVE...")
         self._send(tcpnetlock.constants.ACTION_KEEPALIVE)
         response = self._read_response([tcpnetlock.constants.RESPONSE_STILL_ALIVE])
-        self._mark('KEEPALIVE,OK')
         return response
 
     def release(self):
