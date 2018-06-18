@@ -3,7 +3,7 @@ import socket
 
 import tcpnetlock.constants
 from tcpnetlock import server
-from tcpnetlock import utils
+from tcpnetlock.protocol import Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ class LockClient:
         self._host = host
         self._port = port
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._protocol = Protocol(self._socket)
         self._acquired = None
         if client_id:
             assert self.valid_client_id(client_id), "Invalid client_id: {client_id}".format(client_id=client_id)
@@ -44,68 +45,68 @@ class LockClient:
                 response=response, valid_response_codes=valid_response_codes
             )
 
-    def _send(self, message: str):
-        assert message
-        self._socket.send((message + '\n').encode())
-
     def _read_response(self, valid_responses):
         # FIXME: we should time-out here after some time
-        response = utils.get_line(self._socket)
+        response = self._protocol.readline()
         self._assert_response(response, valid_responses)
         return response
 
     def connect(self):
-        """Connects to the server"""
         logger.info("Connecting to '%s:%s'...", self._host, self._port)
         try:
             self._socket.connect((self._host, self._port))
         except ConnectionRefusedError:
             raise
 
-    def lock(self, name: str) -> bool:
-        """
-        Tries to acquire a lock
-        :param name: lock name
-        :return: boolean indicating if lock as acquired or not
-        """
-        assert self.valid_lock_name(name)
-        logger.info("Trying to acquire lock '%s'...", name)
+    def _generate_lock_message(self, name) -> str:
         if self._client_id:
             message = "{name},client-id:{client_id}".format(name=name, client_id=self._client_id)
         else:
             message = name
-        self._send(message)
+        return message
+
+    def lock(self, name: str) -> bool:
+        """
+        Tries to acquire a lock
+
+        :param name: lock name
+        :return: boolean indicating if lock as acquired or not
+        """
+        assert self.valid_lock_name(name)
+        logger.debug("Trying to acquire lock '%s'...", name)
+        self._protocol.send(self._generate_lock_message(name))
+
         response = self._read_response([tcpnetlock.constants.RESPONSE_OK,
                                         tcpnetlock.constants.RESPONSE_LOCK_NOT_GRANTED,
                                         tcpnetlock.constants.RESPONSE_ERR])
         self._acquired = (response == tcpnetlock.constants.RESPONSE_OK)
-        logging.info("Lock %s acquired: %s", name, self._acquired)
+        logging.info("Lock %s acquired?: %s", name, self._acquired)
 
         return self._acquired
 
     def server_shutdown(self):
         """Send order to shutdown the server"""
         logger.info("Sending SHUTDOWN...")
-        self._send(tcpnetlock.constants.ACTION_SERVER_SHUTDOWN)
+        self._protocol.send(tcpnetlock.constants.ACTION_SERVER_SHUTDOWN)
         return self._read_response([tcpnetlock.constants.RESPONSE_SHUTTING_DOWN])
 
     def ping(self):
         """Send ping to the server"""
         logger.info("Sending PING...")
-        self._send(tcpnetlock.constants.ACTION_PING)
+        self._protocol.send(tcpnetlock.constants.ACTION_PING)
         return self._read_response([tcpnetlock.constants.RESPONSE_PONG])
 
     def keepalive(self):
         """Send a keepalive to the server"""
         logger.info("Sending KEEPALIVE...")
-        self._send(tcpnetlock.constants.ACTION_KEEPALIVE)
+        self._protocol.send(tcpnetlock.constants.ACTION_KEEPALIVE)
         response = self._read_response([tcpnetlock.constants.RESPONSE_STILL_ALIVE])
         return response
 
     def release(self):
         """Release the held lock"""
         logger.info("Trying to RELEASE...")
-        self._send(tcpnetlock.constants.ACTION_RELEASE)
+        self._protocol.send(tcpnetlock.constants.ACTION_RELEASE)
         return self._read_response([tcpnetlock.constants.RESPONSE_RELEASED])
 
     def close(self):
