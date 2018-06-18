@@ -168,3 +168,16 @@ To build the Docker image::
             -t hgdeoro/tcpnetlock:latest ; \
         docker push hgdeoro/tcpnetlock ;\
         )
+
+To generate the commands required to build docker in a remote server (for faster upload of image)::
+
+    $ ( VERSION=$(python setup.py --version) ; \
+        echo git clone --depth 1 --single-branch --branch v${VERSION}  https://github.com/hgdeoro/tcpnetlock.git '&& \'; \
+        echo cd tcpnetlock '&& \' ; \
+        echo docker build --build-arg TNS_VERSION=v${VERSION} \
+            -f docker/Dockerfile docker/ \
+            -t hgdeoro/tcpnetlock:v${VERSION} \
+            -t hgdeoro/tcpnetlock:latest '&& \' ; \
+        echo docker push hgdeoro/tcpnetlock '&& \' ; \
+        echo docker run --rm -ti hgdeoro/tcpnetlock:v${VERSION}
+        )

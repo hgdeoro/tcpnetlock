@@ -14,4 +14,4 @@ RUN pip install tcpnetlock==${TNS_VERSION} && \
 
 EXPOSE 7654
 
-CMD ["tcpnetlock_server", "--listen", "0.0.0.0", "--port", "7654"]
+CMD ["tcpnetlock_server", "--info", "--listen", "0.0.0.0", "--port", "7654"]
