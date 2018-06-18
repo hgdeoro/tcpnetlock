@@ -1,0 +1,16 @@
+# You need to pass $_TNS_VERSION value (usually it will be $TAG_NAME)
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+            'build',
+            '-f', 'docker/Dockerfile',
+            '--build-arg', 'TNS_VERSION=${_TNS_VERSION}',
+            '-t', 'gcr.io/$PROJECT_ID/tcpnetlock:${_TNS_VERSION}',
+            '-t', 'gcr.io/$PROJECT_ID/tcpnetlock:latest',
+            '.'
+        ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/tcpnetlock']
+images:
+- 'gcr.io/$PROJECT_ID/tcpnetlock:${_TNS_VERSION}'
+- 'gcr.io/$PROJECT_ID/tcpnetlock:latest'
