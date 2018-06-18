@@ -1,10 +1,8 @@
 import logging
 import socket
 
+from tcpnetlock.constants import NEW_LINE_BINARY
 from tcpnetlock.utils import ClientDisconnected
-
-NEW_LINE = '\n'.encode()
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +26,11 @@ class Protocol:
         self.socket.sendall((message + '\n').encode())
 
     def _line_in_buffer(self):
-        return self.buffer.find(NEW_LINE) >= 0
+        return self.buffer.find(NEW_LINE_BINARY) >= 0
 
     def _get_line_from_buffer(self) -> str:
         assert self._line_in_buffer()
-        head, tail = self.buffer.split(NEW_LINE, 1)
+        head, tail = self.buffer.split(NEW_LINE_BINARY, 1)
         self.buffer = tail
         return head.decode()
 

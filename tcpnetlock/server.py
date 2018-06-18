@@ -4,11 +4,9 @@ import socketserver
 import threading
 import time
 
+from tcpnetlock import action_handlers as handlers
+from tcpnetlock import constants as const
 from tcpnetlock.action import Action
-from tcpnetlock.action_handlers import ShutdownActionHandler, PingActionHandler, InvalidLockActionHandler, \
-    LockGrantedActionHandler, LockNotGrantedActionHandler
-from tcpnetlock.constants import RESPONSE_INVALID_REQUEST, ACTION_SERVER_SHUTDOWN, ACTION_PING, \
-    VALID_LOCK_NAME_RE
 from tcpnetlock.protocol import Protocol
 from tcpnetlock.utils import ClientDisconnected
 
@@ -37,8 +35,6 @@ The simplest way to use:
 """
 
 logger = logging.getLogger(__name__)
-
-NEW_LINE = '\n'.encode()
 
 
 class Lock:
@@ -90,7 +86,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
     def _invalid_request(self, protocol: Protocol, line: str):
         logger.warning("Received invalid request: '%s'", line)
-        protocol.send(RESPONSE_INVALID_REQUEST)
+        protocol.send(const.RESPONSE_INVALID_REQUEST)
         self.request.close()
 
     def handle(self):
@@ -108,14 +104,14 @@ class TCPHandler(socketserver.BaseRequestHandler):
         else:
             return self._invalid_request(protocol, line)
 
-        if line == ACTION_SERVER_SHUTDOWN:
-            return ShutdownActionHandler(protocol, action, server=self.server).handle_action()
+        if line == const.ACTION_SERVER_SHUTDOWN:
+            return handlers.ShutdownActionHandler(protocol, action, server=self.server).handle_action()
 
-        if line == ACTION_PING:
-            return PingActionHandler(protocol, action).handle_action()
+        if line == const.ACTION_PING:
+            return handlers.PingActionHandler(protocol, action).handle_action()
 
-        if not VALID_LOCK_NAME_RE.match(action.action):
-            return InvalidLockActionHandler(protocol, action).handle_action()
+        if not const.VALID_LOCK_NAME_RE.match(action.action):
+            return handlers.InvalidLockActionHandler(protocol, action).handle_action()
 
         # Get the Lock, only while holding the GLOBAL LOCK
         with self.GLOBAL_LOCK:
@@ -124,8 +120,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         # Acquire lock and proceed, or return failure
         if lock.acquire_non_blocking():
             try:
-                return LockGrantedActionHandler(protocol, action, lock=lock).handle_action()
+                return handlers.LockGrantedActionHandler(protocol, action, lock=lock).handle_action()
             finally:
                 lock.release()
         else:
-            return LockNotGrantedActionHandler(protocol, action).handle_action()
+            return handlers.LockNotGrantedActionHandler(protocol, action).handle_action()

@@ -17,3 +17,5 @@ ACTION_KEEPALIVE = '.keepalive'
 VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 VALID_CLIENT_ID_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 VALID_CHARS_IN_LOCK_NAME_RE = re.compile(r'[a-zA-Z0-9_-]')
+
+NEW_LINE_BINARY = '\n'.encode()
