@@ -5,6 +5,7 @@ import socketserver
 import threading
 import time
 
+from tcpnetlock.action import Action
 from tcpnetlock.constants import RESPONSE_ERR, RESPONSE_INVALID_REQUEST, RESPONSE_LOCK_NOT_GRANTED, RESPONSE_RELEASED, \
     RESPONSE_SHUTTING_DOWN, RESPONSE_PONG, RESPONSE_STILL_ALIVE, ACTION_RELEASE, ACTION_SERVER_SHUTDOWN, ACTION_PING, \
     ACTION_KEEPALIVE, VALID_LOCK_NAME_RE, RESPONSE_OK
@@ -66,36 +67,6 @@ class Lock:
     def __str__(self):
         return "Lock '{name}', client '{client}', age: {age}".format(
             name=self._name, client=self._client_id, age=int(time.time() - self._timestamp))
-
-
-class Action:
-
-    def __init__(self, action: str, params: dict):
-        self.action = action
-        self.params = params
-
-    @property
-    def name(self):
-        return self.action
-
-    def is_valid(self):
-        # action, and param keys must be non-empty
-        return \
-            len(self.action) > 0 \
-            and all(len(p) > 0 for p in self.params.keys())
-
-    @classmethod
-    def from_line(cls, line: str):
-        action, *raw_params = line.split(',')
-        params = []
-        for key, *values in [p.split(':', 1) for p in raw_params]:
-            if values:
-                assert len(values) == 1
-                param = [key.strip(), values[0].strip()]
-            else:
-                param = [key.strip(), '']
-            params.append(param)
-        return Action(action.strip(), dict(params))
 
 
 class TCPServer(socketserver.ThreadingTCPServer):
