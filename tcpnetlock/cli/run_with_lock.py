@@ -1,4 +1,3 @@
-import argparse
 import logging
 import queue
 import subprocess
@@ -8,11 +7,12 @@ import threading
 import tcpnetlock.constants
 from tcpnetlock import client
 from tcpnetlock import server
+from tcpnetlock.cli import utils
 
 logger = logging.getLogger(__name__)
 
 
-class Main:
+class Main(utils.BaseMain):
 
     ERR_INVALID_OPTIONS = 2  # like unix commands
     ERR_LOG_NOT_GRANTED = 123
@@ -20,12 +20,8 @@ class Main:
     ERR_CONNECTION_REFUSED = 125
     ERR_FILE_NOT_FOUND = 127  # like bash
 
-    def __init__(self):
-        self.parser = None
-        self.args = None
-
-    def create_parser(self):
-        parser = argparse.ArgumentParser()
+    def add_app_arguments(self):
+        parser = self.parser
         parser.add_argument("--lock-name",
                             help="Name of the lock to acquire")
 
@@ -48,14 +44,6 @@ class Main:
                             default=15,
                             type=int)
 
-        parser.add_argument("--debug",
-                            default=False,
-                            action='store_true')
-
-        parser.add_argument("--info",
-                            default=False,
-                            action='store_true')
-
         parser.add_argument("--shell",
                             default=False,
                             action='store_true',
@@ -64,21 +52,6 @@ class Main:
         parser.add_argument("command",
                             nargs='+',
                             help="Command to execute (if lock is granted)")
-
-        self.parser = parser
-
-    def create_args(self, args):
-        assert self.parser
-        self.args = self.parser.parse_args(args)
-
-    def setup_logging(self):
-        assert self.args
-        if self.args.debug:
-            logging.basicConfig(level=logging.DEBUG)
-        elif self.args.info:
-            logging.basicConfig(level=logging.INFO)
-        else:
-            logging.basicConfig(level=logging.WARNING)
 
     def validate_and_fix_parameters(self):
         assert self.args
@@ -142,10 +115,7 @@ class Main:
         except:  # noqa: E722 we need to ignore any error
             logger.warning("Error occurred while stopping background thread")
 
-    def run(self, args):
-        self.create_parser()
-        self.create_args(args)
-        self.setup_logging()
+    def main(self):
         self.validate_and_fix_parameters()
 
         # --- Try to get lock

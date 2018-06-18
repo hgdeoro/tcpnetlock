@@ -112,7 +112,7 @@ class LockClient:
     def close(self):
         """Close the socket. As a result of the disconnection, the lock will be released at the server."""
         logger.debug("Closing the socket...")
-        self._socket.close()
+        self._protocol.close()
 
     @property
     def acquired(self) -> bool:

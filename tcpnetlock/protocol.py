@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class Protocol:
+    """
+    Encapsulates the read/write operations on the socket.
+    """
     # FIXME: control length of line
 
     def __init__(self, sock: socket.socket):
