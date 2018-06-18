@@ -41,8 +41,8 @@ def test_connect_and_get_lock_with_client_id_works(lock_server):
     client.close()
 
 
-def test_connect_and_get_lock_works(lock_server):
-    """Test that a lock can be acquired"""
+def test_server_accept_keepalives(lock_server):
+    """Test that server accept keepalives"""
     client = lock_server.get_client()
     client.connect()
     acquired = client.lock(uuid.uuid4().hex)

@@ -1,8 +1,19 @@
 import logging
 import socket
+import functools
 
 
 logger = logging.getLogger(__name__)
+
+
+def ignore_client_disconnected_exception(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except ClientDisconnected:
+            pass
+    return wrapper
 
 
 def get_line(sock, timeout=30):

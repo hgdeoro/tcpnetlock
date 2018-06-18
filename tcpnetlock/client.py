@@ -87,11 +87,11 @@ class LockClient:
         assert self.valid_lock_name(name)
         logger.info("Trying to acquire lock '%s'...", name)
         if self._client_id:
-            message = "{name}:{client_id}".format(name=name, client_id=self._client_id)
+            message = "{name},client-id:{client_id}".format(name=name, client_id=self._client_id)
         else:
             message = name
         self._send(message)
-        response = self._read_response([server.RESPONSE_OK, server.RESPONSE_LOCK_FAILED, server.RESPONSE_ERR])
+        response = self._read_response([server.RESPONSE_OK, server.RESPONSE_LOCK_NOT_GRANTED, server.RESPONSE_ERR])
         self._acquired = (response == server.RESPONSE_OK)
         logging.info("Lock %s acquired: %s", name, self._acquired)
         self._mark("LOCK_RESULT,LOCK:%s,ACQUIRED:%s", name, self._acquired)
