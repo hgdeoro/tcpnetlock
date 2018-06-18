@@ -55,7 +55,7 @@ class InvalidLockActionHandler(ActionHandler):
 
     def handle_action(self):
         logger.warning("Received invalid lock name: '%s'", self.action.action)
-        self.protocol.send(RESPONSE_ERR + ':invalid lock name')
+        self.protocol.send(RESPONSE_ERR + ',invalid lock name')
         self.protocol.close()
 
 

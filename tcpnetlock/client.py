@@ -8,6 +8,37 @@ from tcpnetlock.protocol import Protocol
 logger = logging.getLogger(__name__)
 
 
+class InvalidClientIdError(Exception):
+    """
+    Raised by the client if the provided client-id is not valid.
+    """
+
+
+class Utils:
+
+    @staticmethod
+    def valid_lock_name(lock_name):
+        """Returns True if the provided lock name is valid"""
+        return bool(tcpnetlock.constants.VALID_LOCK_NAME_RE.match(lock_name))
+
+    @staticmethod
+    def valid_client_id(client_id, fails_with_none=True):
+        """Returns True if the provided client_id is valid"""
+        return bool(tcpnetlock.constants.VALID_CLIENT_ID_RE.match(client_id))
+
+    @staticmethod
+    def validate_client_id(client_id, accept_none=True):
+        """Raises InvalidClientIdError if client-id is invalid. Pass if it's None"""
+        if client_id is None:
+            if accept_none:
+                return
+            else:
+                raise InvalidClientIdError("You must provide a client-id")
+
+        if not tcpnetlock.constants.VALID_CLIENT_ID_RE.match(client_id):
+            raise InvalidClientIdError("The provided client-id is not valid")
+
+
 class LockClient:
     DEFAULT_PORT = server.TCPServer.DEFAULT_PORT
 
@@ -20,50 +51,21 @@ class LockClient:
         """
         self._host = host
         self._port = port
+        self._acquired = None
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._protocol = Protocol(self._socket)
-        self._acquired = None
-        if client_id:
-            assert self.valid_client_id(client_id), "Invalid client_id: {client_id}".format(client_id=client_id)
         self._client_id = client_id
-
-    @staticmethod
-    def valid_lock_name(lock_name):
-        """Returns True if the provided lock name is valid"""
-        return bool(tcpnetlock.constants.VALID_LOCK_NAME_RE.match(lock_name))
-
-    @staticmethod
-    def valid_client_id(client_id):
-        """Returns True if the provided client_id is valid"""
-        return bool(tcpnetlock.constants.VALID_CLIENT_ID_RE.match(client_id))
-
-    @staticmethod
-    def _assert_response(response: str, valid_response_codes):
-        response_code = response.split(":")[0]
-        assert response_code in valid_response_codes,\
-            "Invalid response: '{response}'. Valid responses: {valid_response_codes}".format(
-                response=response, valid_response_codes=valid_response_codes
-            )
-
-    def _read_response(self, valid_responses):
-        # FIXME: we should time-out here after some time
-        response = self._protocol.readline()
-        self._assert_response(response, valid_responses)
-        return response
+        Utils.validate_client_id(client_id)
 
     def connect(self):
-        logger.info("Connecting to '%s:%s'...", self._host, self._port)
-        try:
-            self._socket.connect((self._host, self._port))
-        except ConnectionRefusedError:
-            raise
+        """
+        Connects to server.
 
-    def _generate_lock_message(self, name) -> str:
-        if self._client_id:
-            message = "{name},client-id:{client_id}".format(name=name, client_id=self._client_id)
-        else:
-            message = name
-        return message
+        :raises ConnectionRefusedError if connection is refused
+        :return:
+        """
+        logger.info("Connecting to '%s:%s'...", self._host, self._port)
+        self._socket.connect((self._host, self._port))
 
     def lock(self, name: str) -> bool:
         """
@@ -72,45 +74,44 @@ class LockClient:
         :param name: lock name
         :return: boolean indicating if lock as acquired or not
         """
-        assert self.valid_lock_name(name)
-        logger.debug("Trying to acquire lock '%s'...", name)
-        self._protocol.send(self._generate_lock_message(name))
+        response_code = AcquireLockClientAction(
+            self._protocol,
+            None,
+            [tcpnetlock.constants.RESPONSE_OK,
+             tcpnetlock.constants.RESPONSE_LOCK_NOT_GRANTED,
+             tcpnetlock.constants.RESPONSE_ERR]
+        ).handle(lock_name=name, client_id=self._client_id)
 
-        response = self._read_response([tcpnetlock.constants.RESPONSE_OK,
-                                        tcpnetlock.constants.RESPONSE_LOCK_NOT_GRANTED,
-                                        tcpnetlock.constants.RESPONSE_ERR])
-        self._acquired = (response == tcpnetlock.constants.RESPONSE_OK)
-        logging.info("Lock %s acquired?: %s", name, self._acquired)
-
-        return self._acquired
+        # FIXME: raise specific exception if RESPONSE_ERR is received (ex: InvalidClientId)
+        return bool(response_code == tcpnetlock.constants.RESPONSE_OK)
 
     def server_shutdown(self):
         """Send order to shutdown the server"""
-        logger.info("Sending SHUTDOWN...")
-        self._protocol.send(tcpnetlock.constants.ACTION_SERVER_SHUTDOWN)
-        return self._read_response([tcpnetlock.constants.RESPONSE_SHUTTING_DOWN])
+        return ClientAction(self._protocol,
+                            tcpnetlock.constants.ACTION_SERVER_SHUTDOWN,
+                            [tcpnetlock.constants.RESPONSE_SHUTTING_DOWN]).handle()
 
     def ping(self):
         """Send ping to the server"""
-        logger.info("Sending PING...")
-        self._protocol.send(tcpnetlock.constants.ACTION_PING)
-        return self._read_response([tcpnetlock.constants.RESPONSE_PONG])
+        return ClientAction(self._protocol,
+                            tcpnetlock.constants.ACTION_PING,
+                            [tcpnetlock.constants.RESPONSE_PONG]).handle()
 
     def keepalive(self):
         """Send a keepalive to the server"""
-        logger.info("Sending KEEPALIVE...")
-        self._protocol.send(tcpnetlock.constants.ACTION_KEEPALIVE)
-        response = self._read_response([tcpnetlock.constants.RESPONSE_STILL_ALIVE])
-        return response
+        return ClientAction(self._protocol,
+                            tcpnetlock.constants.ACTION_KEEPALIVE,
+                            [tcpnetlock.constants.RESPONSE_STILL_ALIVE]).handle()
 
     def release(self):
         """Release the held lock"""
-        logger.info("Trying to RELEASE...")
-        self._protocol.send(tcpnetlock.constants.ACTION_RELEASE)
-        return self._read_response([tcpnetlock.constants.RESPONSE_RELEASED])
+        return ClientAction(self._protocol,
+                            tcpnetlock.constants.ACTION_RELEASE,
+                            [tcpnetlock.constants.RESPONSE_RELEASED]).handle()
 
     def close(self):
         """Close the socket. As a result of the disconnection, the lock will be released at the server."""
+        logger.debug("Closing the socket...")
         self._socket.close()
 
     @property
@@ -121,3 +122,58 @@ class LockClient:
         """
         assert self._acquired in (True, False)  # Fail if lock() wasn't called
         return self._acquired
+
+
+class ClientAction:
+
+    GENERATE_CUSTOM_MESSAGE = False
+
+    def __init__(self, protocol: Protocol, message: str, valid_responses: list):
+        self.protocol = protocol
+        self.message = message
+        self.valid_responses = valid_responses
+
+        assert self.protocol
+        assert self.message or self.GENERATE_CUSTOM_MESSAGE
+        assert len(self.valid_responses)
+
+    def parse_and_validate_response(self, line: str):
+        response_code, *ignored = line.split(",", maxsplit=1)
+        assert response_code in self.valid_responses,\
+            "Invalid response: '{response_code}'. Valid responses: {valid_response_codes}. Full line: {line}".format(
+                response_code=response_code,
+                valid_response_codes=self.valid_responses,
+                line=line
+            )
+        return response_code
+
+    def read_valid_response(self):
+        line = self.protocol.readline()
+        response_code = self.parse_and_validate_response(line)
+        return response_code
+
+    def get_message(self, **kwargs):
+        return self.message
+
+    def handle(self, **kwargs):
+        message = self.get_message(**kwargs)
+        logger.debug("Sending message to server: %s", message)
+        self.protocol.send(message)
+        return self.read_valid_response()
+
+
+class AcquireLockClientAction(ClientAction):
+
+    GENERATE_CUSTOM_MESSAGE = True
+
+    def get_message(self, lock_name, **kwargs):
+        client_id = kwargs.pop('client_id')
+        if client_id:
+            return "{lock_name},client-id:{client_id}".format(
+                lock_name=lock_name,
+                client_id=client_id
+            )
+        else:
+            return "{lock_name}".format(
+                lock_name=lock_name,
+            )
