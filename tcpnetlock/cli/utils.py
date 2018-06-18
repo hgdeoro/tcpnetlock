@@ -49,3 +49,32 @@ class BaseMain:
 
     def main(self):
         pass
+
+
+"""
+Example:
+
+
+class Main(utils.BaseMain):
+
+    def add_app_arguments(self):
+        parser = self.parser
+        parser.add_argument("--host",
+                            default='localhost')
+
+        parser.add_argument("--port",
+                            default=server.TCPServer.DEFAULT_PORT,
+                            type=int)
+
+    def main(self):
+        pass
+
+def main():
+    Main().run(args=sys.argv[1:])
+
+
+if __name__ == '__main__':
+    main()
+
+
+"""
