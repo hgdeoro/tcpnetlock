@@ -2,6 +2,12 @@
 History
 =======
 
+0.0.7 (2018-06-18)
+------------------
+
+* Refactor messy code from server, client and cli
+
+
 0.0.7 (2018-06-17)
 ------------------
 
