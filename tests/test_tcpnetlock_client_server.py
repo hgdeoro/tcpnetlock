@@ -172,3 +172,13 @@ def test_server_accept_valid_lock_name(lock_server):
         acquired = client.lock(valid)
         assert acquired, "Lock NOT granted for valid lock name: '{valid}'".format(valid=valid)
         client.close()
+
+
+def test_server_rejects_invalid_action(lock_server):
+    """Test that server report invalid action"""
+    client = lock_server.get_client()
+    client.valid_lock_name = mock.MagicMock(return_value=True)
+    client.connect()
+    client._protocol.send('invalid:action')
+    line = client._protocol.readline()
+    assert line == "err,invalid-action"

@@ -13,7 +13,7 @@ class ServerThread(threading.Thread):
         self.server = TCPServer("localhost", port)
         self.port = self.server.port
 
-    def get_client(self, **kwargs):
+    def get_client(self, **kwargs) -> LockClient:
         """Returns a client instance to connect to test server"""
         host = kwargs.pop('host', 'localhost')
         port = kwargs.pop('port', self.port)
