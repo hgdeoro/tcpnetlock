@@ -3,40 +3,10 @@ import socket
 
 import tcpnetlock.constants
 from tcpnetlock import server
+from tcpnetlock.common import Utils
 from tcpnetlock.protocol import Protocol
 
 logger = logging.getLogger(__name__)
-
-
-class InvalidClientIdError(Exception):
-    """
-    Raised by the client if the provided client-id is not valid.
-    """
-
-
-class Utils:
-
-    @staticmethod
-    def valid_lock_name(lock_name):
-        """Returns True if the provided lock name is valid"""
-        return bool(tcpnetlock.constants.VALID_LOCK_NAME_RE.match(lock_name))
-
-    @staticmethod
-    def valid_client_id(client_id, fails_with_none=True):
-        """Returns True if the provided client_id is valid"""
-        return bool(tcpnetlock.constants.VALID_CLIENT_ID_RE.match(client_id))
-
-    @staticmethod
-    def validate_client_id(client_id, accept_none=True):
-        """Raises InvalidClientIdError if client-id is invalid. Pass if it's None"""
-        if client_id is None:
-            if accept_none:
-                return
-            else:
-                raise InvalidClientIdError("You must provide a client-id")
-
-        if not tcpnetlock.constants.VALID_CLIENT_ID_RE.match(client_id):
-            raise InvalidClientIdError("The provided client-id is not valid")
 
 
 class LockClient:
