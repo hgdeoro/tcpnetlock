@@ -4,10 +4,10 @@ import socketserver
 import threading
 import time
 
-from tcpnetlock import action_handlers as handlers
 from tcpnetlock import constants as const
-from tcpnetlock.action import Action
 from tcpnetlock.protocol import Protocol
+from tcpnetlock.server import action_handlers as handlers
+from tcpnetlock.server.action import Action
 from tcpnetlock.utils import ClientDisconnected
 
 """

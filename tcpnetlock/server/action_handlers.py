@@ -1,7 +1,7 @@
 import logging
 
 from tcpnetlock import constants as const
-from tcpnetlock.action import Action
+from tcpnetlock.server.action import Action
 from tcpnetlock.protocol import Protocol
 from tcpnetlock.utils import ignore_client_disconnected_exception
 
