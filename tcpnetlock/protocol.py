@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 class Protocol:
     """
-    Encapsulates the read/write operations on the socket.
+    Encapsulates the read/write operations on the socket for the string, line-oriented protocol used
+    by the server and client.
     """
     # FIXME: control length of line
 
