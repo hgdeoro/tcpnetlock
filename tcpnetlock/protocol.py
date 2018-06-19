@@ -2,7 +2,7 @@ import logging
 import socket
 
 from tcpnetlock.constants import NEW_LINE_BINARY
-from tcpnetlock.utils import ClientDisconnected
+from tcpnetlock.common import ClientDisconnected
 
 logger = logging.getLogger(__name__)
 
