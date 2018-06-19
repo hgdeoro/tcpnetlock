@@ -7,12 +7,12 @@ import threading
 import tcpnetlock.constants
 from tcpnetlock import client
 from tcpnetlock import server
-from tcpnetlock.cli import utils
+from tcpnetlock.cli import common
 
 logger = logging.getLogger(__name__)
 
 
-class Main(utils.BaseMain):
+class Main(common.BaseMain):
 
     ERR_INVALID_OPTIONS = 2  # like unix commands
     ERR_LOG_NOT_GRANTED = 123

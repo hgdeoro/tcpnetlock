@@ -3,12 +3,12 @@ import sys
 import time
 
 from tcpnetlock import client
-from tcpnetlock.cli import utils
+from tcpnetlock.cli import common
 
 logger = logging.getLogger(__name__)
 
 
-class Main(utils.BaseMain):
+class Main(common.BaseMain):
 
     def add_app_arguments(self):
         self.parser.add_argument("lock_name")

@@ -2,10 +2,10 @@ import logging
 import sys
 
 from tcpnetlock import server
-from tcpnetlock.cli import utils
+from tcpnetlock.cli import common
 
 
-class Main(utils.BaseMain):
+class Main(common.BaseMain):
 
     def add_app_arguments(self):
         self.parser.add_argument("--listen", default='localhost')
