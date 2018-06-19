@@ -72,7 +72,7 @@ class TestRunWithLock:
         assert stdout[0].strip().startswith('r ')
         assert re.match(r'^[ 0-9]+$', stdout[1])
 
-    def test_cli_fails_log_not_granted(self, lock_server: ServerThread, lock_name: str):
+    def test_cli_fails_lock_not_granted(self, lock_server: ServerThread, lock_name: str):
         lock_client = lock_server.get_client()
         lock_client.connect()
         assert lock_client.lock(lock_name)

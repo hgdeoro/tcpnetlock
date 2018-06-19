@@ -10,7 +10,7 @@ class BaseMain:
         self.parser = argparse.ArgumentParser()
         self.args = None
 
-    def add_loggin_arguments(self):
+    def add_logging_arguments(self):
         self.parser.add_argument(
             "--debug",
             default=False,
@@ -26,7 +26,7 @@ class BaseMain:
 
     def create_parser(self):
         self.add_app_arguments()
-        self.add_loggin_arguments()
+        self.add_logging_arguments()
 
     def create_args(self, args):
         assert self.parser
