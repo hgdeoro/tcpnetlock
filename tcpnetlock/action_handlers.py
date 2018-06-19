@@ -50,18 +50,31 @@ class PingActionHandler(ActionHandler):
         self.protocol.close()
 
 
+class InvalidActionHandler(ActionHandler):
+    def handle_action(self):
+        logger.warning("Received invalid action: '%s'", self.action.name)
+        self.protocol.send(const.RESPONSE_ERR + ',invalid-action')
+        self.protocol.close()
+
+
 class InvalidLockActionHandler(ActionHandler):
+    def __init__(self, *args, **kwargs):
+        self.lock_name = kwargs.pop('lock_name')
+        super().__init__(*args, **kwargs)
 
     def handle_action(self):
-        logger.warning("Received invalid lock name: '%s'", self.action.action)
+        logger.warning("Received invalid lock name: '%s'", self.lock_name)
         self.protocol.send(const.RESPONSE_ERR + ',invalid lock name')
         self.protocol.close()
 
 
 class LockNotGrantedActionHandler(ActionHandler):
+    def __init__(self, *args, **kwargs):
+        self.lock_name = kwargs.pop('lock_name')
+        super().__init__(*args, **kwargs)
 
     def handle_action(self):
-        logger.info("Lock NOT granted: %s", self.action.action)
+        logger.info("Lock NOT granted: %s", self.lock_name)
         self.protocol.send(const.RESPONSE_LOCK_NOT_GRANTED)
         self.protocol.close()
 
@@ -70,11 +83,13 @@ class LockGrantedActionHandler(ActionHandler):
 
     def __init__(self, *args, **kwargs):
         self.lock = kwargs.pop('lock')
+        self.lock_name = kwargs.pop('lock_name')
         super().__init__(*args, **kwargs)
+        self.client_id = self.action.params.get('client-id')
 
     @ignore_client_disconnected_exception
     def handle_action(self):
-        self.lock.update(self.action.name, self.action.params.get('client-id'))
+        self.lock.update(self.lock_name, self.client_id)
         self.protocol.send(const.RESPONSE_OK)
 
         while True:

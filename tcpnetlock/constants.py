@@ -9,6 +9,7 @@ RESPONSE_SHUTTING_DOWN = 'shutting-down'
 RESPONSE_PONG = 'pong'
 RESPONSE_STILL_ALIVE = 'alive'
 
+ACTION_LOCK = 'lock'
 ACTION_RELEASE = 'release'
 ACTION_SERVER_SHUTDOWN = '.server-shutdown'
 ACTION_PING = '.ping'

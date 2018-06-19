@@ -168,12 +168,7 @@ class AcquireLockClientAction(ClientAction):
 
     def get_message(self, lock_name, **kwargs):
         client_id = kwargs.pop('client_id')
+        message = "lock,name:{lock_name}".format(lock_name=lock_name)
         if client_id:
-            return "{lock_name},client-id:{client_id}".format(
-                lock_name=lock_name,
-                client_id=client_id
-            )
-        else:
-            return "{lock_name}".format(
-                lock_name=lock_name,
-            )
+            message += ",client-id:{client_id}".format(client_id=client_id)
+        return message

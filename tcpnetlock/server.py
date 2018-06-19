@@ -109,24 +109,31 @@ class TCPHandler(socketserver.BaseRequestHandler):
         else:
             return self._invalid_request(protocol, line)
 
-        if line == const.ACTION_SERVER_SHUTDOWN:
+        if action.name == const.ACTION_SERVER_SHUTDOWN:
             return handlers.ShutdownActionHandler(protocol, action, server=self.server).handle_action()
 
-        if line == const.ACTION_PING:
+        if action.name == const.ACTION_PING:
             return handlers.PingActionHandler(protocol, action).handle_action()
 
-        if not const.VALID_LOCK_NAME_RE.match(action.action):
-            return handlers.InvalidLockActionHandler(protocol, action).handle_action()
+        if action.name != const.ACTION_LOCK:
+            return handlers.InvalidActionHandler(protocol, action).handle_action()
+
+        lock_name = action.params.get('name')
+        if not const.VALID_LOCK_NAME_RE.match(lock_name):
+            return handlers.InvalidLockActionHandler(protocol, action, lock_name=lock_name).handle_action()
 
         # Get the Lock, only while holding the GLOBAL LOCK
+        # This is done to avoid 2 concurrent clients creating 2 instances of the same lock at the same time
         with self.GLOBAL_LOCK:
-            lock = self.LOCKS[action.name]
+            lock = self.LOCKS[lock_name]
 
-        # Acquire lock and proceed, or return failure
+        # Acquire lock and proceed, or return failure.
+        # If multiple concurrent clients try to get the lock, only one will proceed
         if lock.acquire_non_blocking():
             try:
-                return handlers.LockGrantedActionHandler(protocol, action, lock=lock).handle_action()
+                return handlers.LockGrantedActionHandler(
+                    protocol, action, lock=lock, lock_name=lock_name).handle_action()
             finally:
                 lock.release()
         else:
-            return handlers.LockNotGrantedActionHandler(protocol, action).handle_action()
+            return handlers.LockNotGrantedActionHandler(protocol, action, lock_name=lock_name).handle_action()
