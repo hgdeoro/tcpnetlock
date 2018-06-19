@@ -1,5 +1,4 @@
 import threading
-import time
 import uuid
 
 import pytest
@@ -9,32 +8,10 @@ from tcpnetlock.server import TCPServer
 
 
 class ServerThread(threading.Thread):
-    def __init__(self, initial_port=7654):
+    def __init__(self, port=0):
         super().__init__(daemon=True)
-        server = None
-        for port in range(initial_port, initial_port + 1000):
-            try:
-                server = TCPServer("localhost", port)
-            except OSError as err:
-                print("err.errno: {}".format(err.errno))
-        assert server, "Could not bind server"
-        self.server = server
-        self.port = port
-
-    def wait_for_server(self):
-        """Busy-waits until the test server is responding"""
-        connected = False
-        lock_client = LockClient("localhost", self.port)
-        for _ in range(50):
-            try:
-                lock_client.connect()
-                connected = True
-                break
-            except ConnectionRefusedError:
-                time.sleep(0.1)
-        assert connected, "Couldn't connect to test server after many tries"
-        lock_client.ping()
-        lock_client.close()
+        self.server = TCPServer("localhost", port)
+        self.port = self.server.port
 
     def get_client(self, **kwargs):
         """Returns a client instance to connect to test server"""
@@ -54,7 +31,6 @@ def lock_server() -> ServerThread:
 
     server_thread = ServerThread()
     server_thread.start()
-    server_thread.wait_for_server()
 
     yield server_thread
 

@@ -73,6 +73,10 @@ class TCPServer(socketserver.ThreadingTCPServer):
     def __init__(self, host='localhost', port=DEFAULT_PORT):
         super().__init__((host, port), TCPHandler)
 
+    @property
+    def port(self):
+        return self.socket.getsockname()[1]
+
 
 class TCPHandler(socketserver.BaseRequestHandler):
 
