@@ -67,6 +67,7 @@ class Lock:
 
 class TCPServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
+    daemon_threads = True
     DEFAULT_PORT = 7654
 
     def __init__(self, host='localhost', port=DEFAULT_PORT):

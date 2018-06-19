@@ -46,7 +46,7 @@ class ServerThread(threading.Thread):
         self.server.serve_forever()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def lock_server() -> ServerThread:
     """
     Fixture, returns the server process running a TCPServer ready to use
@@ -63,10 +63,10 @@ def lock_server() -> ServerThread:
     client.server_shutdown()
     client.close()
 
-    server_thread.join(5)
+    server_thread.join(1)
     assert not server_thread.is_alive(), "Server didn't shut down cleanly"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def lock_name() -> str:
     return str(uuid.uuid4())

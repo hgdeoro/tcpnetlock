@@ -99,8 +99,8 @@ class TestRunWithLock:
         assert completed_process.returncode == run_with_lock.Main.ERR_CONNECTION_REFUSED
 
     def test_cli_fails_with_exit_status_of_command(self, lock_server: ServerThread, lock_name: str):
-        completed_process = self._run(lock_name, lock_server, '--shell', 'exit 5')
+        completed_process = self._run(lock_name + '1', lock_server, '--shell', 'exit 5')
         assert completed_process.returncode == 5
 
-        completed_process = self._run(lock_name, lock_server, '--shell', 'exit 8')
+        completed_process = self._run(lock_name + '2', lock_server, '--shell', 'exit 8')
         assert completed_process.returncode == 8

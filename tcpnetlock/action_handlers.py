@@ -39,8 +39,8 @@ class ShutdownActionHandler(ActionHandler):
         if not self.can_proceed():
             pass  # FIXME: do something
         self.protocol.send(const.RESPONSE_SHUTTING_DOWN)
-        self.protocol.close()
         self.server.shutdown()
+        self.protocol.close()
 
 
 class PingActionHandler(ActionHandler):

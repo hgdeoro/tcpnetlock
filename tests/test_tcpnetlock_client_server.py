@@ -8,8 +8,26 @@ from unittest import mock
 
 from .test_utils import lock_server
 from .test_utils import ServerThread
+from tcpnetlock import client
 
 assert lock_server
+
+
+def _get_client_with_lock_acquired(lock_server, name, repeat=20, wait=0.3) -> client.LockClient:
+    """Loop until we can get the lock"""
+    iters = list(range(repeat))
+    while iters:
+        iters.pop()
+        client = lock_server.get_client()
+        client.connect()
+        acquired = client.lock(name)
+        if acquired:
+            return client
+        client.close()
+        if iters:
+            time.sleep(wait)
+
+    return None
 
 
 def test_server_is_alive(lock_server: ServerThread):
@@ -98,12 +116,8 @@ def test_release_lock_and_re_acquire(lock_server):
     client_1.release()
     client_1.close()
 
-    # re-acquire same lock
-    client_2 = lock_server.get_client()
-    client_2.connect()
-    acquired = client_2.lock(name)
-    assert acquired
-    client_2.close()
+    lucky_client = _get_client_with_lock_acquired(lock_server, name)
+    assert lucky_client  # We got a client that re-acquired the lock
 
 
 def test_lock_is_released_when_client_closes_connection(lock_server):
@@ -119,14 +133,8 @@ def test_lock_is_released_when_client_closes_connection(lock_server):
     client_1.close()
 
     # re-acquire same lock
-    acquired = False
-    for _ in range(20):
-        client_2 = lock_server.get_client()
-        client_2.connect()
-        acquired = client_2.lock(name)
-        if not acquired:
-            time.sleep(0.1)
-    assert acquired
+    lucky_client = _get_client_with_lock_acquired(lock_server, name)
+    assert lucky_client
 
 
 def test_server_rejects_invalid_lock_name(lock_server):
@@ -149,12 +157,12 @@ def test_server_rejects_invalid_lock_name(lock_server):
 def test_server_accept_valid_lock_name(lock_server):
     """Test that server DO accept valid lock name"""
     valid_names = (
-        'valid-name',
-        'valid-name-8',
-        'valid_name',
-        ' space_is_ignored',
-        'space_is_ignored ',
-        ' space_is_ignored ',
+        'valid1--name',
+        'valid2-name-8',
+        'valid3_name',
+        ' space4_is_ignored',
+        'space5_is_ignored ',
+        ' space6_is_ignored ',
     )
 
     for valid in valid_names:
