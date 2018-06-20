@@ -2,14 +2,15 @@
 Tests for `tcpnetlock.client` and `tcpnetlock.server` packages.
 """
 
-import time
 import uuid
-from unittest import mock
 
+import pytest
+
+from tcpnetlock import common
 from tcpnetlock import constants
-from .test_utils import lock_server
-from .test_utils import ServerThread
 from .test_utils import BaseTest
+from .test_utils import ServerThread
+from .test_utils import lock_server
 
 assert lock_server
 
@@ -105,7 +106,7 @@ class TestLock(BaseTest):
         lucky_client = self.get_client_with_lock_acquired(lock_server, name)
         assert lucky_client
 
-    def test_server_rejects_invalid_lock_name(self, lock_server):
+    def test_server_rejects_invalid_lock_name(self, lock_server, monkeypatch):
         """Test that server do not accept invalid lock name"""
         invalid_names = (
             '.starts-with-space',
@@ -115,13 +116,16 @@ class TestLock(BaseTest):
 
         for invalid in invalid_names:
             client = lock_server.get_client()
-            client.valid_lock_name = mock.MagicMock(return_value=True)
             client.connect()
-            acquired = client.lock(invalid)
+
+            with monkeypatch.context() as mp:
+                mp.setattr(common.Utils, 'valid_lock_name', lambda x: True)
+                acquired = client.lock(invalid)
+
             assert not acquired, "Lock granted for invalid lock name: '{invalid}'".format(invalid=invalid)
             client.close()
 
-    def test_server_accept_valid_lock_name(self, lock_server):
+    def test_server_accept_valid_lock_name(self, lock_server, monkeypatch):
         """Test that server DO accept valid lock name"""
         valid_names = (
             'valid1--name',
@@ -134,11 +138,29 @@ class TestLock(BaseTest):
 
         for valid in valid_names:
             client = lock_server.get_client()
-            client.valid_lock_name = mock.MagicMock(return_value=True)
             client.connect()
-            acquired = client.lock(valid)
+
+            with monkeypatch.context() as mp:
+                mp.setattr(common.Utils, 'valid_lock_name', lambda x: True)
+                acquired = client.lock(valid)
+
             assert acquired, "Lock NOT granted for valid lock name: '{valid}'".format(valid=valid)
             client.close()
+
+    def test_client_fails_with_invalid_lock_name(self, lock_server):
+        """Test that client fails with invalid lock name"""
+        invalid_names = (
+            '.starts-with-space',
+            'contains space',
+            'contains%invalid%chars',
+        )
+
+        client = lock_server.get_client()
+        client.connect()
+        for invalid in invalid_names:
+            with pytest.raises(common.InvalidLockNameError):
+                client.lock(invalid)
+        client.close()
 
 
 class TestWithLockGranted(BaseTest):
@@ -173,7 +195,6 @@ class TestAction(BaseTest):
     def test_server_rejects_invalid_action(self, lock_server):
         """Test that server report invalid action"""
         client = lock_server.get_client()
-        client.valid_lock_name = mock.MagicMock(return_value=True)
         client.connect()
         client._protocol.send('invalid:action')
         line = client._protocol.readline()
@@ -182,7 +203,6 @@ class TestAction(BaseTest):
     def test_server_rejects_invalid_request(self, lock_server):
         """Test that server report invalid request"""
         client = lock_server.get_client()
-        client.valid_lock_name = mock.MagicMock(return_value=True)
         client.connect()
         client._protocol.send(',param:value')
         line = client._protocol.readline()

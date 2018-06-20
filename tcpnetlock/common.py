@@ -30,6 +30,12 @@ class InvalidClientIdError(TcpNetLockException):
     """
 
 
+class InvalidLockNameError(TcpNetLockException):
+    """
+    Raised by the client if the provided LOCK name is not valid.
+    """
+
+
 class Utils:
 
     @staticmethod

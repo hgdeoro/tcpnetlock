@@ -1,12 +1,13 @@
 import logging
 import socket
 
-import tcpnetlock.constants
-from tcpnetlock.server import server
+from tcpnetlock import common
+from tcpnetlock import constants
 from tcpnetlock.client.action import AcquireLockClientAction
 from tcpnetlock.client.action import ClientAction
 from tcpnetlock.common import Utils
 from tcpnetlock.protocol import Protocol
+from tcpnetlock.server import server
 
 logger = logging.getLogger(__name__)
 
@@ -46,40 +47,43 @@ class LockClient:
         :param name: lock name
         :return: boolean indicating if lock as acquired or not
         """
+        if not Utils.valid_lock_name(name):
+            raise common.InvalidLockNameError("Lock name is invalid: '{lock_name}'".format(lock_name=name))
+
         response_code = AcquireLockClientAction(
             self._protocol,
             None,
-            [tcpnetlock.constants.RESPONSE_OK,
-             tcpnetlock.constants.RESPONSE_LOCK_NOT_GRANTED,
-             tcpnetlock.constants.RESPONSE_ERR]
+            [constants.RESPONSE_OK,
+             constants.RESPONSE_LOCK_NOT_GRANTED,
+             constants.RESPONSE_ERR]
         ).handle(lock_name=name, client_id=self._client_id)
 
         # FIXME: raise specific exception if RESPONSE_ERR is received (ex: InvalidClientId)
-        return bool(response_code == tcpnetlock.constants.RESPONSE_OK)
+        return bool(response_code == constants.RESPONSE_OK)
 
     def server_shutdown(self):
         """Send order to shutdown the server"""
         return ClientAction(self._protocol,
-                            tcpnetlock.constants.ACTION_SERVER_SHUTDOWN,
-                            [tcpnetlock.constants.RESPONSE_SHUTTING_DOWN]).handle()
+                            constants.ACTION_SERVER_SHUTDOWN,
+                            [constants.RESPONSE_SHUTTING_DOWN]).handle()
 
     def ping(self):
         """Send ping to the server"""
         return ClientAction(self._protocol,
-                            tcpnetlock.constants.ACTION_PING,
-                            [tcpnetlock.constants.RESPONSE_PONG]).handle()
+                            constants.ACTION_PING,
+                            [constants.RESPONSE_PONG]).handle()
 
     def keepalive(self):
         """Send a keepalive to the server"""
         return ClientAction(self._protocol,
-                            tcpnetlock.constants.ACTION_KEEPALIVE,
-                            [tcpnetlock.constants.RESPONSE_STILL_ALIVE]).handle()
+                            constants.ACTION_KEEPALIVE,
+                            [constants.RESPONSE_STILL_ALIVE]).handle()
 
     def release(self):
         """Release the held lock"""
         return ClientAction(self._protocol,
-                            tcpnetlock.constants.ACTION_RELEASE,
-                            [tcpnetlock.constants.RESPONSE_RELEASED]).handle()
+                            constants.ACTION_RELEASE,
+                            [constants.RESPONSE_RELEASED]).handle()
 
     def close(self):
         """Close the socket. As a result of the disconnection, the lock will be released at the server."""
