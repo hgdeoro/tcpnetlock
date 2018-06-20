@@ -164,3 +164,12 @@ class TestAction(BaseTest):
         client._protocol.send('invalid:action')
         line = client._protocol.readline()
         assert line == "err,invalid-action"
+
+    def test_server_rejects_invalid_request(self, lock_server):
+        """Test that server report invalid request"""
+        client = lock_server.get_client()
+        client.valid_lock_name = mock.MagicMock(return_value=True)
+        client.connect()
+        client._protocol.send(',param:value')
+        line = client._protocol.readline()
+        assert line == "bad-request"
