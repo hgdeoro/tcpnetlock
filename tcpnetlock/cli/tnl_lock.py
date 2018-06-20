@@ -6,7 +6,7 @@ import threading
 
 import tcpnetlock.constants
 from tcpnetlock.client import client
-from tcpnetlock import server
+from tcpnetlock.server import server
 from tcpnetlock.cli import common
 
 logger = logging.getLogger(__name__)

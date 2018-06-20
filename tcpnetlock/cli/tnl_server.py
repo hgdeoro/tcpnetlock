@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from tcpnetlock import server
+from tcpnetlock.server import server
 from tcpnetlock.cli import common
 
 

@@ -2,7 +2,7 @@ import logging
 import socket
 
 import tcpnetlock.constants
-from tcpnetlock import server
+from tcpnetlock.server import server
 from tcpnetlock.client.action import AcquireLockClientAction
 from tcpnetlock.client.action import ClientAction
 from tcpnetlock.common import Utils
