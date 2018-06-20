@@ -44,11 +44,6 @@ class Utils:
         return bool(tcpnetlock.constants.VALID_LOCK_NAME_RE.match(lock_name))
 
     @staticmethod
-    def valid_client_id(client_id, fails_with_none=True):
-        """Returns True if the provided client_id is valid"""
-        return bool(tcpnetlock.constants.VALID_CLIENT_ID_RE.match(client_id))
-
-    @staticmethod
     def validate_client_id(client_id, accept_none=True):
         """Raises InvalidClientIdError if client-id is invalid. Pass if it's None"""
         if client_id is None:
