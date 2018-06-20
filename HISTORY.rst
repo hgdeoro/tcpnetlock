@@ -2,6 +2,17 @@
 History
 =======
 
+0.1.0 (2018-06-19)
+------------------
+
+* Docker start server with --info by default
+* Adds cloudbuild.yaml to facilitate building in GCP
+* Change in protocol to detect unintended uses
+* Detect invalid requests and always send response to client
+* BIG refactor of server and client classes
+* Add lot of tests (current coverage: 99%)
+
+
 0.0.8 (2018-06-18)
 ------------------
 
