@@ -122,16 +122,18 @@ Make sure all your changes are committed (including an entry in HISTORY.rst).
 
 Then, to test & bump version run::
 
-    $ ( rm -rf dist/ build/ ; \
+    $ ( make clean ; \
         test -z "$(git status --porcelain)" || { echo "WORKING DIRECTORY IS NOT CLEAN" ; exit 1 ; } && \
         tox && \
         bumpversion patch && \
+        echo "ENTER to continue..." && \
+        read && \
         git push && \
         git push --tags )
 
 To upload to test.pypi.org::
 
-    $ ( rm -rf dist/ build/ ; \
+    $ ( make clean ; \
         python3 setup.py sdist bdist_wheel ; \
         twine upload -r pypitest dist/* ; \
         VERSION=$(python setup.py --version) ; \
@@ -150,7 +152,7 @@ To upload to pypi.org::
 
 To install locally in a brand new virtualenv::
 
-    $ ( rm -rf dist/ build/ ; \
+    $ ( make clean ; \
         python3 setup.py sdist bdist_wheel ; \
         deactivate ; \
         export VID=$(uuidgen) ; \
