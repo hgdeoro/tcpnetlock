@@ -8,6 +8,7 @@ import pytest
 
 from tcpnetlock import common
 from tcpnetlock import constants
+from tcpnetlock.client.client import LockClient
 from .test_utils import BaseTest
 from .test_utils import ServerThread
 from .test_utils import lock_server
@@ -30,6 +31,7 @@ class TestLock(BaseTest):
         client.connect()
         acquired = client.lock(uuid.uuid4().hex)
         assert acquired
+        assert client.acquired
         client.close()
 
     def test_connect_and_get_lock_with_client_id_works(self, lock_server):
@@ -70,6 +72,7 @@ class TestLock(BaseTest):
         client_2.connect()
         acquired = client_2.lock(name)
         assert not acquired
+        assert not client_2.acquired
 
         client_1.close()
         client_2.close()
@@ -161,6 +164,18 @@ class TestLock(BaseTest):
             with pytest.raises(common.InvalidLockNameError):
                 client.lock(invalid)
         client.close()
+
+    def test_client_fails_with_invalid_client_id(self):
+        """Test that client fails with invalid client id"""
+        invalid_client_ids = (
+            'contains.point',
+            'contains space',
+            'contains%invalid%chars',
+        )
+
+        for invalid in invalid_client_ids:
+            with pytest.raises(common.InvalidClientIdError):
+                LockClient(client_id=invalid)
 
 
 class TestWithLockGranted(BaseTest):

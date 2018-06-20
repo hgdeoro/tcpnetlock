@@ -59,7 +59,8 @@ class LockClient:
         ).handle(lock_name=name, client_id=self._client_id)
 
         # FIXME: raise specific exception if RESPONSE_ERR is received (ex: InvalidClientId)
-        return bool(response_code == constants.RESPONSE_OK)
+        self._acquired = bool(response_code == constants.RESPONSE_OK)
+        return self._acquired
 
     def server_shutdown(self):
         """Send order to shutdown the server"""
