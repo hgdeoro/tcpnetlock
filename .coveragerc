@@ -1,3 +1,6 @@
 [run]
 omit =
     tcpnetlock/cli/*
+
+[report]
+fail_under = 95
