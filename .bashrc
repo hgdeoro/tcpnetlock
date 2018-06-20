@@ -99,6 +99,29 @@ function _tnl_upload {
 }
 
 
+function _tnl_docker_build {
+(
+	set -e
+	trap 'cowthink ooooops' ERR
+	VERSION=$(python setup.py --version)
+        docker build \
+		--build-arg TNS_VERSION=v${VERSION} \
+            	-f docker/Dockerfile docker/ \
+            	-t hgdeoro/tcpnetlock:v${VERSION} \
+            	-t hgdeoro/tcpnetlock:latest
+)
+}
+
+
+function _tnl_docker_push {
+(
+	set -e
+	trap 'cowthink ooooops' ERR
+        docker push hgdeoro/tcpnetlock
+)
+}
+
+
 
 function tnl {
 	op=$1
@@ -115,12 +138,14 @@ function tnl {
 		pre-release) _tnl_pre_release ;;
 		release) _tnl_release ;;
 		upload) _tnl_upload ;;
+		docker-build) _tnl_docker_build ;;
+		docker-push) _tnl_docker_push ;;
 		*)
 			echo "Invalid: $op"
-			echo "Valid options: [s|server] [c|client] [d|do] [t|test] [l|lint] [tl|test-lint] [g|coverage] [pre-release]"
+			echo "Valid options: [s|server] [c|client] [d|do] [t|test] [l|lint] [tl|test-lint] [g|coverage] [pre-release] [release] [upload] [docker-build] [docker-push]"
 			;;
 	esac
 }
 
 # 'release' and 'upload' are NOT autocompleted to avoid potential erroneous execution
-complete -W "server client do test lint test-lint coverage pre-release" tnl
+complete -W "server client do test lint test-lint coverage pre-release docker-build" tnl
