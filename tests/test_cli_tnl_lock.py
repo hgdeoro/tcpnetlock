@@ -8,7 +8,7 @@ import subprocess
 import pytest
 
 from tcpnetlock.cli import tnl_lock
-from tcpnetlock.client import LockClient
+from tcpnetlock.client.client import LockClient
 
 from .test_utils import ServerThread
 from .test_utils import lock_server

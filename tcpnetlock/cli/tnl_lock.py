@@ -5,7 +5,7 @@ import sys
 import threading
 
 import tcpnetlock.constants
-from tcpnetlock import client
+from tcpnetlock.client import client
 from tcpnetlock import server
 from tcpnetlock.cli import common
 

@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from tcpnetlock.client import LockClient
+from tcpnetlock.client.client import LockClient
 from tcpnetlock.server import TCPServer
 
 

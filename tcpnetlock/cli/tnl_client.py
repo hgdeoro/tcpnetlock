@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 
-from tcpnetlock import client
+from tcpnetlock.client import client
 from tcpnetlock.cli import common
 
 logger = logging.getLogger(__name__)
