@@ -112,4 +112,5 @@ function tnl {
 	esac
 }
 
+# 'release' and 'upload' are NOT autocompleted to avoid potential erroneous execution
 complete -W "server client do test lint test-lint coverage pre-release" tnl
