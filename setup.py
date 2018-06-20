@@ -47,7 +47,12 @@ setup(
     include_package_data=True,
     keywords='tcpnetlock',
     name='tcpnetlock',
-    packages=find_packages(include=['tcpnetlock']),
+    packages=find_packages(include=[
+        'tcpnetlock',
+        'tcpnetlock.client',
+        'tcpnetlock.cli',
+        'tcpnetlock.server',
+    ]),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
