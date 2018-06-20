@@ -2,6 +2,7 @@ import re
 
 RESPONSE_OK = 'ok'
 RESPONSE_ERR = 'err'
+RESPONSE_INVALID_ACTION = 'bad-action'
 RESPONSE_INVALID_REQUEST = 'bad-request'
 RESPONSE_LOCK_NOT_GRANTED = 'not-granted'
 RESPONSE_RELEASED = 'released'

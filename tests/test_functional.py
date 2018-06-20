@@ -6,6 +6,7 @@ import time
 import uuid
 from unittest import mock
 
+from tcpnetlock import constants
 from .test_utils import lock_server
 from .test_utils import ServerThread
 from .test_utils import BaseTest
@@ -140,7 +141,7 @@ class TestLock(BaseTest):
             client.close()
 
 
-class TestKeepAlive(BaseTest):
+class TestWithLockGranted(BaseTest):
 
     def test_server_accept_keepalives(self, lock_server):
         """Test that server accept keepalives"""
@@ -150,7 +151,20 @@ class TestKeepAlive(BaseTest):
         assert acquired
         for _ in range(2):
             client.keepalive()
-            time.sleep(0.2)
+        client.close()
+
+    def test_server_reports_invalid_action(self, lock_server):
+        """Test that server reports an invalid action was sent while holding the lock"""
+        client = lock_server.get_client()
+        client.connect()
+        acquired = client.lock(uuid.uuid4().hex)
+        assert acquired
+        client._protocol.send('invalid:action')
+        line = client._protocol.readline(0.5)
+        assert line == constants.RESPONSE_INVALID_ACTION
+
+        # even after en invalid action, keep alive should continue working
+        client.keepalive()
         client.close()
 
 
@@ -163,7 +177,7 @@ class TestAction(BaseTest):
         client.connect()
         client._protocol.send('invalid:action')
         line = client._protocol.readline()
-        assert line == "err,invalid-action"
+        assert line == constants.RESPONSE_INVALID_ACTION
 
     def test_server_rejects_invalid_request(self, lock_server):
         """Test that server report invalid request"""

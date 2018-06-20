@@ -50,10 +50,10 @@ class PingActionHandler(ActionHandler):
         self.protocol.close()
 
 
-class InvalidActionHandler(ActionHandler):
+class InvalidActionActionHandler(ActionHandler):
     def handle_action(self):
         logger.warning("Received invalid action: '%s'", self.action.name)
-        self.protocol.send(const.RESPONSE_ERR + ',invalid-action')
+        self.protocol.send(const.RESPONSE_INVALID_ACTION)
         self.protocol.close()
 
 
@@ -100,12 +100,14 @@ class LockGrantedActionHandler(ActionHandler):
             inner_action = Action.from_line(line)
             logger.debug("Inner action: '%s' for lock %s", inner_action, self.lock)
 
+            # FIXME: handle 'invalid requests' here too
+
             if inner_action.name == const.ACTION_RELEASE:
                 return InnerReleaseLockActionHandler(self.protocol, inner_action, lock=self.lock).handle_action()
             if inner_action.name == const.ACTION_KEEPALIVE:
                 InnerKeepAliveActionHandler(self.protocol, inner_action, lock=self.lock).handle_action()
             else:
-                logger.warning("Ignoring unknown action '%s' for lock: %s", inner_action.name, self.lock)
+                InnerInvalidActionActionHandler(self.protocol, inner_action, lock=self.lock).handle_action()
 
 
 class InnerReleaseLockActionHandler(ActionHandler):
@@ -129,3 +131,14 @@ class InnerKeepAliveActionHandler(ActionHandler):
     def handle_action(self):
         logger.debug("Received keepalive from client. Lock: %s", self.lock)
         self.protocol.send(const.RESPONSE_STILL_ALIVE)
+
+
+class InnerInvalidActionActionHandler(ActionHandler):
+
+    def __init__(self, *args, **kwargs):
+        self.lock = kwargs.pop('lock')
+        super().__init__(*args, **kwargs)
+
+    def handle_action(self):
+        logger.debug("Received invalid action from client. Lock: %s", self.lock)
+        self.protocol.send(const.RESPONSE_INVALID_ACTION)
