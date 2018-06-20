@@ -7,7 +7,7 @@ import subprocess
 
 import pytest
 
-from tcpnetlock.cli import tnl_lock
+from tcpnetlock.cli import tnl_do
 from tcpnetlock.client.client import LockClient
 
 from .test_utils import ServerThread
@@ -23,7 +23,7 @@ class TestRunWithLock:
     def _run(self, lock_name, lock_server, *args) -> subprocess.CompletedProcess:
         port_arg = [arg for arg in args if arg.startswith('--port=')] or ['--port={port}'.format(port=lock_server.port)]
         base_args = [
-            'python', '-m', 'tcpnetlock.cli.tnl_lock',
+            'python', '-m', 'tcpnetlock.cli.tnl_do',
             '--host=localhost',
             '--lock-name={lock_name}'.format(lock_name=lock_name),
         ] + port_arg
@@ -78,15 +78,15 @@ class TestRunWithLock:
         assert lock_client.lock(lock_name)
 
         completed_process = self._run(lock_name, lock_server, '--', 'vmstat', '1', '1')
-        assert completed_process.returncode == tnl_lock.Main.ERR_LOG_NOT_GRANTED
+        assert completed_process.returncode == tnl_do.Main.ERR_LOG_NOT_GRANTED
 
     def test_cli_fails_file_not_found(self, lock_server: ServerThread, lock_name: str):
         completed_process = self._run(lock_name, lock_server, '--', '/non/existing/binary', '1', '1')
-        assert completed_process.returncode == tnl_lock.Main.ERR_FILE_NOT_FOUND
+        assert completed_process.returncode == tnl_do.Main.ERR_FILE_NOT_FOUND
 
     def test_cli_fails_with_invalid_options(self, lock_server: ServerThread, lock_name: str):
         completed_process = self._run(lock_name, lock_server, '--shell', '--', 'vmstat', 'other-arg')
-        assert completed_process.returncode == tnl_lock.Main.ERR_INVALID_OPTIONS
+        assert completed_process.returncode == tnl_do.Main.ERR_INVALID_OPTIONS
 
     def test_cli_fails_with_connection_refused(self, lock_server: ServerThread, lock_name: str):
         lock_client = LockClient("localhost", port=lock_server.port + 1)  # assume this is free
@@ -96,7 +96,7 @@ class TestRunWithLock:
             lock_name, lock_server,
             '--port={port}'.format(port=lock_server.port + 1),
             '--', 'vmstat', '1', '1')
-        assert completed_process.returncode == tnl_lock.Main.ERR_CONNECTION_REFUSED
+        assert completed_process.returncode == tnl_do.Main.ERR_CONNECTION_REFUSED
 
     def test_cli_fails_with_exit_status_of_command(self, lock_server: ServerThread, lock_name: str):
         completed_process = self._run(lock_name + '1', lock_server, '--shell', 'exit 5')
