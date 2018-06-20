@@ -120,66 +120,18 @@ Deploying
 A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).
 
-Then, to test & bump version run::
+Then, sousrce `.bashrc`::
 
-    $ ( make clean ; \
-        test -z "$(git status --porcelain)" || { echo "WORKING DIRECTORY IS NOT CLEAN" ; exit 1 ; } && \
-        tox && \
-        bumpversion patch && \
-        echo "ENTER to continue..." && \
-        read && \
-        git push && \
-        git push --tags )
+    source .bashrc
 
-To upload to test.pypi.org::
+And you from there, it's easy. To run tox, coverage, and try to install the package in a new virtualenv::
 
-    $ ( make clean ; \
-        python3 setup.py sdist bdist_wheel ; \
-        twine upload -r pypitest dist/* ; \
-        VERSION=$(python setup.py --version) ; \
-        deactivate ; \
-        cd / ; \
-        export VID=$(uuidgen) ; \
-        virtualenv -p python3.6 /tmp/venv-$VID ; \
-        source /tmp/venv-$VID/bin/activate ; \
-        pip install --index-url https://test.pypi.org/simple/ tcpnetlock==${VERSION}; \
-        )
+    $ tnl pre-release
 
-To upload to pypi.org::
+If everything went ok, do the release (this will bump the version)::
 
-    $ twine upload -r pypi dist/*
+    $ tnl release
 
+and then, upload to pypi and GitHub::
 
-To install locally in a brand new virtualenv::
-
-    $ ( make clean ; \
-        python3 setup.py sdist bdist_wheel ; \
-        deactivate ; \
-        export VID=$(uuidgen) ; \
-        virtualenv -p python3.6 /tmp/venv-$VID ; \
-        source /tmp/venv-$VID/bin/activate ; \
-        pip install ./dist/tcpnetlock*.whl ; \
-        )
-
-To build the Docker image::
-
-    $ ( VERSION=$(python setup.py --version) ; \
-        docker build --build-arg TNS_VERSION=v${VERSION} \
-            -f docker/Dockerfile docker/ \
-            -t hgdeoro/tcpnetlock:v${VERSION} \
-            -t hgdeoro/tcpnetlock:latest ; \
-        docker push hgdeoro/tcpnetlock ;\
-        )
-
-To generate the commands required to build docker in a remote server (for faster upload of image)::
-
-    $ ( VERSION=$(python setup.py --version) ; \
-        echo git clone --depth 1 --single-branch --branch v${VERSION}  https://github.com/hgdeoro/tcpnetlock.git '&& \'; \
-        echo cd tcpnetlock '&& \' ; \
-        echo docker build --build-arg TNS_VERSION=v${VERSION} \
-            -f docker/Dockerfile docker/ \
-            -t hgdeoro/tcpnetlock:v${VERSION} \
-            -t hgdeoro/tcpnetlock:latest '&& \' ; \
-        echo docker push hgdeoro/tcpnetlock '&& \' ; \
-        echo docker run --rm -ti hgdeoro/tcpnetlock:v${VERSION}
-        )
+    $ tnl upload
