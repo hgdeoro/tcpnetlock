@@ -70,9 +70,19 @@ function _tnl_release {
 		export VID=$(uuidgen)
 		virtualenv -p python3.6 /tmp/venv-$VID
 		source /tmp/venv-$VID/bin/activate
-		pip install --index-url https://test.pypi.org/simple/ tcpnetlock==${VERSION};
-
-		_tnl_test_installed
+		RETRY=1
+		while [ "$RETRY" -eq 1 ] ; do
+			set +e
+			pip install --index-url https://test.pypi.org/simple/ tcpnetlock==${VERSION}
+			if [ "$?" -eq 0 ] ; then
+				RETRY=0
+			else
+				echo "Download failed... Retrying...."
+				sleep 1
+			fi
+			set -e
+		done
+		_tnl_test_installed  # This usually fails because pypi do not see the new version imediatly
 		cowthink ok
 	)
 )
