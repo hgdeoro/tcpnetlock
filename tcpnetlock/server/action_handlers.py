@@ -91,6 +91,7 @@ class LockGrantedActionHandler(ActionHandler):
     def handle_action(self):
         self.lock.update(self.lock_name, self.client_id)
         self.protocol.send(const.RESPONSE_OK)
+        logger.info("Lock granted: %s", self.lock)
 
         while True:
             line = self.protocol.readline(timeout=1.0)
