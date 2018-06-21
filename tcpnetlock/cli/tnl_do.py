@@ -12,13 +12,14 @@ from tcpnetlock.cli import common
 logger = logging.getLogger(__name__)
 
 
-class Main(common.BaseMain):
+ERR_INVALID_OPTIONS = 2  # like unix commands
+ERR_LOG_NOT_GRANTED = 123
+ERR_EXECUTING_COMMAND = 124
+ERR_CONNECTION_REFUSED = 125
+ERR_FILE_NOT_FOUND = 127  # like bash
 
-    ERR_INVALID_OPTIONS = 2  # like unix commands
-    ERR_LOG_NOT_GRANTED = 123
-    ERR_EXECUTING_COMMAND = 124
-    ERR_CONNECTION_REFUSED = 125
-    ERR_FILE_NOT_FOUND = 127  # like bash
+
+class Main(common.BaseMain):
 
     def add_app_arguments(self):
         parser = self.parser
@@ -61,7 +62,7 @@ class Main(common.BaseMain):
             if len(self.args.command) != 1:
                 self.parser.error("When invoking with --shell, you should provide a SINGLE command. "
                                   "If you're having problems to achieve that, try wrapping it with quotes.")
-                sys.exit(self.ERR_INVALID_OPTIONS)
+                sys.exit(ERR_INVALID_OPTIONS)
 
         # --- Get 'lock name' to use (provided by user, or generated from command)
         if not self.args.lock_name:
@@ -78,7 +79,7 @@ class Main(common.BaseMain):
             if not self.args.lock_name:
                 self.parser.error("Couldn't create a lock name from the command. "
                                   "You must specify the lock name with --lock-name")
-                sys.exit(self.ERR_INVALID_OPTIONS)
+                sys.exit(ERR_INVALID_OPTIONS)
 
     def start_keepalive_thread(self, lock_client: client.LockClient):
         keepalive_queue = queue.Queue()
@@ -124,12 +125,12 @@ class Main(common.BaseMain):
             lock_client.connect()
         except ConnectionRefusedError:
             logger.error("Connection refused. Server: '%s:%s'", self.args.host, self.args.port)
-            sys.exit(self.ERR_CONNECTION_REFUSED)
+            sys.exit(ERR_CONNECTION_REFUSED)
 
         granted = lock_client.lock(self.args.lock_name)
         if not granted:
             logger.info("Lock '%s' not granted. Exiting...", self.args.lock_name)
-            sys.exit(self.ERR_LOG_NOT_GRANTED)
+            sys.exit(ERR_LOG_NOT_GRANTED)
 
         # --- Send keepalive from thread
         if self.args.keep_alive:
@@ -149,7 +150,7 @@ class Main(common.BaseMain):
                                                check=False)
         except FileNotFoundError as err:
             sys.stderr.write("ERROR: command not found: '{command}'\n".format(command=err.filename))
-            sys.exit(self.ERR_FILE_NOT_FOUND)
+            sys.exit(ERR_FILE_NOT_FOUND)
         except KeyboardInterrupt:
             pass
 
@@ -164,7 +165,7 @@ class Main(common.BaseMain):
         if completed_process:
             sys.exit(completed_process.returncode)
         else:
-            sys.exit(self.ERR_EXECUTING_COMMAND)  # something happened (including KeyboardInterrupt)
+            sys.exit(ERR_EXECUTING_COMMAND)  # something happened (including KeyboardInterrupt)
 
 
 def main():
