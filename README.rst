@@ -97,7 +97,27 @@ Features
 * Ready to use Docker image (based on Alpine)
 * Includes server and python client
 * Includes utility to run Linux commands while holding the lock
-* Simple protocol: you can get a lock even with `nc`
+* Simple protocol: you can get a lock even with *netcat*
+
+Appendix: netcat
+----------------
+
+Since the protocol is just text over a TCP connection, you can get a lock just writing the
+right text overt the TCP connection and leaving that TCP connection open, and that's the default
+behaviour of netcat::
+
+    $ echo 'lock,name:LOCK_NAME' | nc localhost 7654
+
+The first line uses netcat to open the TCP connection and tries to get the lock.
+
+The biggest problem would be to READ the response to the server (will be one of 'ok' or 'not-granted') while
+send `nc` to the background. We can use a `fifo` for that::
+
+    $ echo 'lock,name:LOCK_NAME' | nc -v localhost 7654 | tee /tmp/.tcpnetlock &
+    $ result=$(head -n 1 /tmp/.tcpnetlock)
+
+Even though this works, using one of the two existing python clients (`tnl_client` and `tnl_do`) would be much better.
+
 
 Credits
 -------
