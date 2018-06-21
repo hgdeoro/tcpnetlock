@@ -2,6 +2,14 @@
 History
 =======
 
+0.1.2 (2018-06-21)
+------------------
+
+* Update client & server to handle errors in a better way
+* Add tests
+* Update docs
+
+
 0.1.1 (2018-06-20)
 ------------------
 
