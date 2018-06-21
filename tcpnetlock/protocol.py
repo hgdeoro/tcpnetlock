@@ -83,3 +83,19 @@ class Protocol:
             return self._readline_blocking()
         else:
             return self._readline_non_blocking(timeout=timeout)
+
+    def check_connection(self):
+        """
+        Raises ClientDisconnected if connection is closed (this is used to detect cases like if the server died.
+        """
+        # FIXME: must be a better way to implement this check :/
+        self.socket.settimeout(1)
+        try:
+            recv_data = self.socket.recv(1)
+        except socket.timeout:
+            return  # this is not a guaranty that TCP connection still exists
+
+        if recv_data:
+            self.buffer.extend(recv_data)
+        else:
+            raise ClientDisconnected()

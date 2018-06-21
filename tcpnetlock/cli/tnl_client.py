@@ -4,6 +4,7 @@ import time
 
 from tcpnetlock.client import client
 from tcpnetlock.cli import common
+from tcpnetlock.common import ClientDisconnected
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ ERR_CONNECTION_REFUSED = 2
 ERR_CONNECTION_FAILED = 3
 ERR_UNKNOWN = 4
 
+ERR_TCP_DISCONNECT_WHILE_HOLDING_LOCK = 122
 ERR_LOG_NOT_GRANTED = 123
 
 
@@ -53,8 +55,18 @@ class Main(common.BaseMain):
                     lock_client.keepalive()
             else:
                 while True:
-                    logger.debug("Sleeping for an hour...")
-                    time.sleep(60 * 60)
+                    logger.debug("Checking connection...")
+                    try:
+                        lock_client.check_connection()
+                    except ClientDisconnected as err:
+                        logger.debug("Unexpected disconnection while holding the lock '%s'. "
+                                     "Server was killed?", self.args.lock_name)
+                        print("ERROR: Unexpected disconnection while holding the lock '{lock}'. "
+                              "Server was killed?".format(lock=self.args.lock_name),
+                              file=sys.stderr)
+                        sys.exit(ERR_TCP_DISCONNECT_WHILE_HOLDING_LOCK)
+
+                    time.sleep(5)
 
         except SystemExit as err:
             sys.exit(err.code)

@@ -86,6 +86,12 @@ class LockClient:
                             constants.ACTION_RELEASE,
                             [constants.RESPONSE_RELEASED]).handle()
 
+    def check_connection(self):
+        """
+        Raises ClientDisconnected if connection is closed (this is used to detect cases like if the server died.
+        """
+        self._protocol.check_connection()
+
     def close(self):
         """Close the socket. As a result of the disconnection, the lock will be released at the server."""
         logger.debug("Closing the socket...")
