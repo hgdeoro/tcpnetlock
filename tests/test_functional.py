@@ -1,13 +1,15 @@
 """
 Tests for `tcpnetlock.client` and `tcpnetlock.server` packages.
 """
-
+import subprocess
 import uuid
 
 import pytest
 
+from tcpnetlock.cli import tnl_server
 from tcpnetlock import common
 from tcpnetlock import constants
+from tcpnetlock.server import server
 from tcpnetlock.client.client import LockClient
 from .test_utils import BaseTest
 from .test_utils import ServerThread
@@ -222,3 +224,23 @@ class TestAction(BaseTest):
         client._protocol.send(',param:value')
         line = client._protocol.readline()
         assert line == "bad-request"
+
+
+class TestServerCli(BaseTest):
+    def test_report_bind_to_used_port(self, lock_server: ServerThread):
+        args = [
+            'python', '-m', 'tcpnetlock.cli.tnl_server',
+            '--port={port}'.format(port=lock_server.port),
+        ]
+        completed_process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        assert completed_process.returncode == tnl_server.EXIT_SERVER_BIND_ERROR
+        assert completed_process.stderr.decode().find('[Errno 98]') >= 0
+
+    def test_report_bind_to_privileged_port(self, lock_server: ServerThread):
+        args = [
+            'python', '-m', 'tcpnetlock.cli.tnl_server',
+            '--port=20',
+        ]
+        completed_process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        assert completed_process.returncode == tnl_server.EXIT_SERVER_BIND_ERROR
+        assert completed_process.stderr.decode().find('[Errno 13]') >= 0

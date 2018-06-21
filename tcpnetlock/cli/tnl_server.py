@@ -5,6 +5,10 @@ from tcpnetlock.server import server
 from tcpnetlock.cli import common
 
 
+EXIT_SERVER_BIND_ERROR = 2
+EXIT_HANDLING_REQUESTS_ERROR = 3
+
+
 class Main(common.BaseMain):
 
     def add_app_arguments(self):
@@ -13,8 +17,19 @@ class Main(common.BaseMain):
 
     def main(self):
         logging.info("Started server listening on %s:%s", self.args.listen, self.args.port)
-        with server.TCPServer(self.args.listen, self.args.port) as lock_server:
+        try:
+            lock_server = server.TCPServer(self.args.listen, self.args.port)
+        except BaseException as err:
+            logging.debug('Error while bind()ing...', exc_info=True)
+            print(str(err) or 'Error detected while creating server', file=sys.stderr)
+            sys.exit(EXIT_SERVER_BIND_ERROR)
+
+        try:
             lock_server.serve_forever()
+        except BaseException as err:
+            logging.debug('Error while handling requests...', exc_info=True)
+            print(str(err) or 'Error while handling requests', file=sys.stderr)
+            sys.exit(EXIT_HANDLING_REQUESTS_ERROR)
 
 
 def main():
