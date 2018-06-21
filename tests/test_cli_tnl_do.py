@@ -1,5 +1,5 @@
 """
-Tests for `tcpnetlock.client` and `tcpnetlock.server` packages.
+Tests for `tcpnetlock.cli.tnl_do` package.
 """
 
 import re

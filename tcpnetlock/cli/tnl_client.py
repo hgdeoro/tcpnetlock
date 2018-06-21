@@ -8,6 +8,13 @@ from tcpnetlock.cli import common
 logger = logging.getLogger(__name__)
 
 
+ERR_CONNECTION_REFUSED = 2
+ERR_CONNECTION_FAILED = 3
+ERR_UNKNOWN = 4
+
+ERR_LOG_NOT_GRANTED = 123
+
+
 class Main(common.BaseMain):
 
     def add_app_arguments(self):
@@ -20,21 +27,44 @@ class Main(common.BaseMain):
 
     def main(self):
         lock_client = client.LockClient(self.args.host, self.args.port, client_id=self.args.client_id)
-        lock_client.connect()
-        granted = lock_client.lock(self.args.lock_name)
-        if not granted:
-            logger.debug("Lock not granted. Exiting...")
-            sys.exit(9)
 
-        if self.args.keep_alive:
-            while True:
-                logger.debug("Sleeping for %s... (after that, will send a keep-alive)", self.args.keep_alive_secs)
-                time.sleep(self.args.keep_alive_secs)
-                lock_client.keepalive()
-        else:
-            while True:
-                logger.debug("Sleeping for an hour...")
-                time.sleep(60 * 60)
+        try:
+            lock_client.connect()
+        except ConnectionRefusedError as err:
+            logger.debug("ConnectionRefusedError", exc_info=True)
+            print(str(err), file=sys.stderr)
+            sys.exit(ERR_CONNECTION_REFUSED)
+        except BaseException as err:
+            logger.debug("Can't connect", exc_info=True)
+            print(str(err), file=sys.stderr)
+            sys.exit(ERR_CONNECTION_FAILED)
+
+        try:
+            granted = lock_client.lock(self.args.lock_name)
+            if not granted:
+                logger.debug("Lock '%s' not granted. Exiting...", self.args.lock_name)
+                print("ERROR: lock '{lock}' not granted by server".format(lock=self.args.lock_name), file=sys.stderr)
+                sys.exit(ERR_LOG_NOT_GRANTED)
+
+            if self.args.keep_alive:
+                while True:
+                    logger.info("Sleeping for %s... (after that, will send a keep-alive)", self.args.keep_alive_secs)
+                    time.sleep(self.args.keep_alive_secs)
+                    lock_client.keepalive()
+            else:
+                while True:
+                    logger.debug("Sleeping for an hour...")
+                    time.sleep(60 * 60)
+
+        except SystemExit as err:
+            sys.exit(err.code)
+
+        except BaseException as err:
+            logger.debug("Error while getting or having the lock", exc_info=True)
+            print(str(err), file=sys.stderr)
+            sys.exit(ERR_UNKNOWN)
+        finally:
+            lock_client.close()
 
 
 def main():

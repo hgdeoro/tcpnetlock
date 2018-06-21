@@ -1,3 +1,4 @@
+import socket
 import threading
 import time
 import uuid
@@ -73,3 +74,21 @@ def lock_server() -> ServerThread:
 @pytest.fixture()
 def lock_name() -> str:
     return str(uuid.uuid4())
+
+
+@pytest.fixture()
+def free_tcp_port() -> int:
+    """Returns an unused tcp port"""
+    host = 'localhost'
+    for port in range(65000, 65100):
+        ssocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            ssocket.bind((host, port))
+            return port
+        except OSError as err:
+            if err.errno == 98:
+                continue
+            raise  # unexpected error, re-raise it
+        finally:
+            ssocket.close()
+    raise Exception("Couldn't find a free tcp port")
