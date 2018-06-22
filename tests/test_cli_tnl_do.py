@@ -13,9 +13,11 @@ from tcpnetlock.client.client import LockClient
 from .test_utils import ServerThread
 from .test_utils import lock_server
 from .test_utils import lock_name
+from .test_utils import free_tcp_port
 
 assert lock_server
 assert lock_name
+assert free_tcp_port
 
 
 class TestRunWithLock:
@@ -104,3 +106,14 @@ class TestRunWithLock:
 
         completed_process = self._run(lock_name + '2', lock_server, '--shell', 'exit 8')
         assert completed_process.returncode == 8
+
+    def test_cli_uses_environment_variable(self, free_tcp_port):
+        args = [
+            'timeout', '1s',
+            'env', 'TCPNETLOCK_PORT={port}'.format(port=free_tcp_port),
+            'python', '-m', 'tcpnetlock.cli.tnl_do',
+            '--',
+            'vmstat', '1',
+        ]
+        completed_process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        assert completed_process.returncode == tnl_do.ERR_CONNECTION_REFUSED

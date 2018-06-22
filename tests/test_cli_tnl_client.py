@@ -4,6 +4,8 @@ Tests for `tcpnetlock.cli.tnl_client` package.
 import subprocess
 import uuid
 
+import pytest
+
 from tcpnetlock.cli import tnl_client
 from tests.test_utils import ServerThread
 from .test_utils import BaseTest
@@ -42,3 +44,12 @@ class TestClientCli(BaseTest):
         completed_process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert completed_process.returncode == tnl_client.ERR_LOCK_NOT_GRANTED
         assert completed_process.stderr.decode().find('not granted') >= 0
+
+    def test_cli_uses_environment_variable(self, free_tcp_port):
+        args = [
+            'timeout', '1s',
+            'env', 'TCPNETLOCK_PORT={port}'.format(port=free_tcp_port),
+            'python', '-m', 'tcpnetlock.cli.tnl_client',  '--debug', 'some-lock'
+        ]
+        completed_process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        assert completed_process.returncode == tnl_client.ERR_CONNECTION_REFUSED
