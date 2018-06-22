@@ -20,9 +20,10 @@ function _tnl_assert_clean {
 }
 
 function _tnl_test_installed {
-	tcpnetlock_server --debug &
+	PORT=1975
+	tcpnetlock_server --debug --port=${PORT} &
 	sleep 1
-	tcpnetlock_do --debug --lock-name lock1 -- vmstat 1 1
+	tcpnetlock_do --debug --port=${PORT} --lock-name lock1 -- vmstat 1 1
 	kill %1
 }
 
