@@ -128,7 +128,7 @@ function tnl {
 	shift
 
 	case "$op" in
-		s|server) python -m tcpnetlock.cli.tnl_server --debug ;; # run the server
+		s|server) python -m tcpnetlock.cli.tnl_server --debug $* ;; # run the server
 		c|client) python -m tcpnetlock.cli.tnl_client --debug test-lock $* ;; # run the client
 		d|do) python -m tcpnetlock.cli.tnl_do --debug --lock-name test-lock $* ;; # run tnl_do
 		t|test) py.test -v $* ;;
