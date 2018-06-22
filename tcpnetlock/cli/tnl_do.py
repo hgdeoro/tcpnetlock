@@ -1,4 +1,5 @@
 import logging
+import os
 import queue
 import subprocess
 import sys
@@ -21,11 +22,17 @@ ERR_FILE_NOT_FOUND = 127  # like bash
 
 class Main(common.BaseMain):
 
+    DEFAULT_HOST = os.environ.get('TCPNETLOCK_HOST', 'localhost')
+    DEFAULT_PORT = os.environ.get('TCPNETLOCK_PORT', str(server.TCPServer.DEFAULT_PORT))
+    DEFAULT_CLIENT_ID = os.environ.get('TCPNETLOCK_CLIENT_ID')
+
     def add_app_arguments(self):
         self.parser.description = """
         Connect to TCPNetLock server and tries to get the lock.
         If lock IS GRANTED, the client executes the command provided by the user.
         If the lock IS NOT GRANTED, we exits with status {not_granted}.
+
+        The following environment variables are used: TCPNETLOCK_HOST, TCPNETLOCK_PORT and TCPNETLOCK_CLIENT_ID.
         """.format(not_granted=ERR_LOCK_NOT_GRANTED)
 
         parser = self.parser
@@ -33,14 +40,14 @@ class Main(common.BaseMain):
                             help="Name of the lock to acquire")
 
         parser.add_argument("--host",
-                            default='localhost')
+                            default=self.DEFAULT_HOST)
 
         parser.add_argument("--port",
-                            default=server.TCPServer.DEFAULT_PORT,
+                            default=self.DEFAULT_PORT,
                             type=int)
 
         parser.add_argument("--client-id",
-                            default=None,
+                            default=self.DEFAULT_CLIENT_ID,
                             help="Client id to report to the server")
 
         parser.add_argument("--keep-alive",

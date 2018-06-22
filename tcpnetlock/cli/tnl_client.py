@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 
@@ -19,18 +20,24 @@ ERR_LOCK_NOT_GRANTED = 123
 
 class Main(common.BaseMain):
 
+    DEFAULT_HOST = os.environ.get('TCPNETLOCK_HOST', 'localhost')
+    DEFAULT_PORT = os.environ.get('TCPNETLOCK_PORT', str(client.LockClient.DEFAULT_PORT))
+    DEFAULT_CLIENT_ID = os.environ.get('TCPNETLOCK_CLIENT_ID')
+
     def add_app_arguments(self):
         self.parser.description = """
         Connect to TCPNetLock server and tries to get the lock.
         If lock IS GRANTED, the client enters a busy loop, sending keepalives or checking
         that the TCP connection is alive.
         If the lock IS NOT GRANTED, we exits with status {not_granted}.
+
+        The following environment variables are used: TCPNETLOCK_HOST, TCPNETLOCK_PORT and TCPNETLOCK_CLIENT_ID.
         """.format(not_granted=ERR_LOCK_NOT_GRANTED)
 
         self.parser.add_argument("lock_name")
-        self.parser.add_argument("--host", default='localhost')
-        self.parser.add_argument("--port", default=client.LockClient.DEFAULT_PORT, type=int)
-        self.parser.add_argument("--client-id", default=None)
+        self.parser.add_argument("--host", default=self.DEFAULT_HOST)
+        self.parser.add_argument("--port", default=self.DEFAULT_PORT, type=int)
+        self.parser.add_argument("--client-id", default=self.DEFAULT_CLIENT_ID)
         self.parser.add_argument("--keep-alive", default=False, action='store_true')
         self.parser.add_argument("--keep-alive-secs", default=15, type=int)
 

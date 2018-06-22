@@ -22,7 +22,7 @@ class TestClientCli(BaseTest):
             'python', '-m', 'tcpnetlock.cli.tnl_client',
             '--debug',
             '--port={port}'.format(port=free_tcp_port),
-               str(uuid.uuid4())
+            str(uuid.uuid4())
         ]
         completed_process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert completed_process.returncode == tnl_client.ERR_CONNECTION_REFUSED
