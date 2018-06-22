@@ -26,3 +26,11 @@ class Action:
                 param = [key.strip(), '']
             params.append(param)
         return Action(action.strip(), dict(params))
+
+    def __str__(self):
+        if self.params:
+            params = ', '.join(['{}:{}'.format(k, v)
+                                for k, v in self.params.items()])
+            return "Action: '{name}'; {params}".format(name=self.action, params=params)
+        else:
+            return "Action: '{name}'".format(name=self.action)
