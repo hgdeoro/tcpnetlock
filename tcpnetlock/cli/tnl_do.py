@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 ERR_INVALID_OPTIONS = 2  # like unix commands
-ERR_LOG_NOT_GRANTED = 123
+ERR_LOCK_NOT_GRANTED = 123
 ERR_EXECUTING_COMMAND = 124
 ERR_CONNECTION_REFUSED = 125
 ERR_FILE_NOT_FOUND = 127  # like bash
@@ -22,6 +22,12 @@ ERR_FILE_NOT_FOUND = 127  # like bash
 class Main(common.BaseMain):
 
     def add_app_arguments(self):
+        self.parser.description = """
+        Connect to TCPNetLock server and tries to get the lock.
+        If lock IS GRANTED, the client executes the command provided by the user.
+        If the lock IS NOT GRANTED, we exits with status {not_granted}.
+        """.format(not_granted=ERR_LOCK_NOT_GRANTED)
+
         parser = self.parser
         parser.add_argument("--lock-name",
                             help="Name of the lock to acquire")
@@ -130,7 +136,7 @@ class Main(common.BaseMain):
         granted = lock_client.lock(self.args.lock_name)
         if not granted:
             logger.info("Lock '%s' not granted. Exiting...", self.args.lock_name)
-            sys.exit(ERR_LOG_NOT_GRANTED)
+            sys.exit(ERR_LOCK_NOT_GRANTED)
 
         # --- Send keepalive from thread
         if self.args.keep_alive:

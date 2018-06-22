@@ -40,5 +40,5 @@ class TestClientCli(BaseTest):
             lock_name
         ]
         completed_process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        assert completed_process.returncode == tnl_client.ERR_LOG_NOT_GRANTED
+        assert completed_process.returncode == tnl_client.ERR_LOCK_NOT_GRANTED
         assert completed_process.stderr.decode().find('not granted') >= 0

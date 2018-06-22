@@ -14,12 +14,19 @@ ERR_CONNECTION_FAILED = 3
 ERR_UNKNOWN = 4
 
 ERR_TCP_DISCONNECT_WHILE_HOLDING_LOCK = 122
-ERR_LOG_NOT_GRANTED = 123
+ERR_LOCK_NOT_GRANTED = 123
 
 
 class Main(common.BaseMain):
 
     def add_app_arguments(self):
+        self.parser.description = """
+        Connect to TCPNetLock server and tries to get the lock.
+        If lock IS GRANTED, the client enters a busy loop, sending keepalives or checking
+        that the TCP connection is alive.
+        If the lock IS NOT GRANTED, we exits with status {not_granted}.
+        """.format(not_granted=ERR_LOCK_NOT_GRANTED)
+
         self.parser.add_argument("lock_name")
         self.parser.add_argument("--host", default='localhost')
         self.parser.add_argument("--port", default=client.LockClient.DEFAULT_PORT, type=int)
@@ -46,7 +53,7 @@ class Main(common.BaseMain):
             if not granted:
                 logger.debug("Lock '%s' not granted. Exiting...", self.args.lock_name)
                 print("ERROR: lock '{lock}' not granted by server".format(lock=self.args.lock_name), file=sys.stderr)
-                sys.exit(ERR_LOG_NOT_GRANTED)
+                sys.exit(ERR_LOCK_NOT_GRANTED)
 
             if self.args.keep_alive:
                 while True:
