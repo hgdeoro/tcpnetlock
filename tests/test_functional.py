@@ -155,6 +155,8 @@ class TestLock(BaseTest):
             '.starts-with-space',
             'contains space',
             'contains%invalid%chars',
+            'contains.point',
+            'contains.point@and.arroba',
         )
 
         client = lock_server.get_client()
@@ -167,7 +169,6 @@ class TestLock(BaseTest):
     def test_client_fails_with_invalid_client_id(self):
         """Test that client fails with invalid client id"""
         invalid_client_ids = (
-            'contains.point',
             'contains space',
             'contains%invalid%chars',
         )

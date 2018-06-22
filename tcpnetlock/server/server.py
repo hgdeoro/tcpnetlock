@@ -61,8 +61,8 @@ class Lock:
         self._lock.release()
 
     def __str__(self):
-        return "Lock '{name}', client '{client}', age: {age}".format(
-            name=self._name, client=self._client_id, age=int(time.time() - self._timestamp))
+        return "Lock: '{name}', client-id: '{client}', age: {age}".format(
+            name=self._name, client=self._client_id or '', age=int(time.time() - self._timestamp))
 
 
 class TCPServer(socketserver.ThreadingTCPServer):
