@@ -86,7 +86,7 @@ class Protocol:
 
     def check_connection(self):
         """
-        Raises ClientDisconnected if connection is closed (this is used to detect cases like if the server died.
+        Raises ClientDisconnected if connection is closed (this is used to detect cases like if the server died).
         """
         # FIXME: must be a better way to implement this check :/
         self.socket.settimeout(1)

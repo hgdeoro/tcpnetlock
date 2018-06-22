@@ -8,10 +8,13 @@ import pytest
 from tcpnetlock import common
 from tcpnetlock import constants
 from tcpnetlock.client.client import LockClient
+from tcpnetlock.common import ClientDisconnected
 from .test_utils import BaseTest
 from .test_utils import ServerThread
+from .test_utils import lock_name
 from .test_utils import lock_server
 
+assert lock_name
 assert lock_server
 
 
@@ -222,3 +225,33 @@ class TestAction(BaseTest):
         client._protocol.send(',param:value')
         line = client._protocol.readline()
         assert line == "bad-request"
+
+
+class TestProtocol(BaseTest):
+
+    def test_check_connection_with_valid_connection(self, lock_server: ServerThread, lock_name):
+        client = lock_server.get_client()
+        client.connect()
+        assert client.lock(lock_name)
+
+        # Should do nothing
+        client.check_connection()
+
+    # def test_check_connection_raises_with_invalid_connection(self, lock_server: ServerThread, lock_name):
+    #     client = lock_server.get_client()
+    #     client.connect()
+    #     assert client.lock(lock_name)
+    #
+    #     # Should do nothing
+    #     client.check_connection()
+    #
+    #     shutdown_client = lock_server.get_client()
+    #     shutdown_client.connect()
+    #     shutdown_client.server_shutdown()
+    #
+    #     # --
+    #     lock_server._dont_shutdown = True  # hack? :/
+    #     lock_server.join()
+    #
+    #     with pytest.raises(ClientDisconnected):
+    #         client.check_connection()
