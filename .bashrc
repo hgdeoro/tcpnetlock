@@ -64,7 +64,7 @@ function _tnl_release {
 	git log -n1 | grep -q 'Bump version: ' || bumpversion ${TNL_BUMP:-patch}
 	make clean dist
 	VERSION=$(python setup.py --version)
-	twine upload -r pypitest dist/*
+	twine upload --skip-existing -r pypitest dist/*
 	(
 		deactivate
 		cd /
@@ -143,7 +143,10 @@ function tnl {
 		docker-push) _tnl_docker_push ;;
 		*)
 			echo "Invalid: $op"
-			echo "Valid options: [s|server] [c|client] [d|do] [t|test] [l|lint] [tl|test-lint] [g|coverage] [pre-release] [release] [upload] [docker-build] [docker-push]"
+			echo "Valid options for development:"
+			echo "    [s|server] [c|client] [d|do] [t|test] [l|lint] [tl|test-lint] [g|coverage]"
+			echo "Valid options for releasing:"
+			echo "    [pre-release] [release] [upload] [docker-build] [docker-push]"
 			;;
 	esac
 }
