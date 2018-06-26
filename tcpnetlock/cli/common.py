@@ -48,7 +48,24 @@ class BaseMain:
         self.main()
 
     def main(self):
-        pass
+        raise NotImplementedError()
+
+
+class PositiveInteger:
+
+    def __init__(self, allow_zero=True):
+        self.allow_zero = allow_zero
+
+    def __call__(self, value):
+        int_value = int(value)
+        if self.allow_zero:
+            if int_value < 0:
+                 raise argparse.ArgumentTypeError("{value} is an invalid positive int value".format(value=int_value))
+        else:
+            if int_value <= 0:
+                 raise argparse.ArgumentTypeError("{value} is an invalid positive int value".format(value=int_value))
+
+        return int_value
 
 
 """

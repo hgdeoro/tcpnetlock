@@ -4,11 +4,12 @@ import queue
 import subprocess
 import sys
 import threading
+import time
 
-import tcpnetlock.constants
+from tcpnetlock import constants
+from tcpnetlock.cli import common
 from tcpnetlock.client import client
 from tcpnetlock.server import server
-from tcpnetlock.cli import common
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,17 @@ class Main(common.BaseMain):
 
         parser.add_argument("--port",
                             default=self.DEFAULT_PORT,
-                            type=int)
+                            type=common.PositiveInteger())
+
+        parser.add_argument("--retry",
+                            default=0,
+                            type=common.PositiveInteger(),
+                            help="How many times retry getting the lock (defauls 0, do not retry)")
+
+        parser.add_argument("--retry-wait",
+                            default=10,
+                            type=common.PositiveInteger(),
+                            help="How many seconds wait between tries")
 
         parser.add_argument("--client-id",
                             default=self.DEFAULT_CLIENT_ID,
@@ -56,7 +67,7 @@ class Main(common.BaseMain):
 
         parser.add_argument("--keep-alive-secs",
                             default=15,
-                            type=int)
+                            type=common.PositiveInteger())
 
         parser.add_argument("--shell",
                             default=False,
@@ -84,7 +95,7 @@ class Main(common.BaseMain):
             temporary = temporary.replace('.', '_')
             temporary = temporary.replace('/', '_')
             temporary = temporary.strip('_')
-            matches = tcpnetlock.constants.VALID_CHARS_IN_LOCK_NAME_RE.findall(temporary)
+            matches = constants.VALID_CHARS_IN_LOCK_NAME_RE.findall(temporary)
             self.args.lock_name = ''.join(matches)
 
             logger.info("Generated lock name '%s' (from provided command '%s')", self.args.lock_name, self.args.command)
@@ -132,18 +143,27 @@ class Main(common.BaseMain):
     def main(self):
         self.validate_and_fix_parameters()
 
-        # --- Try to get lock
-        lock_client = client.LockClient(self.args.host, self.args.port, client_id=self.args.client_id)
-        try:
-            lock_client.connect()
-        except ConnectionRefusedError:
-            logger.error("Connection refused. Server: '%s:%s'", self.args.host, self.args.port)
-            sys.exit(ERR_CONNECTION_REFUSED)
+        tries = list(range(self.args.retry + 1))
+        while tries:
+            tries.pop()
 
-        granted = lock_client.lock(self.args.lock_name)
-        if not granted:
-            logger.info("Lock '%s' not granted. Exiting...", self.args.lock_name)
-            sys.exit(ERR_LOCK_NOT_GRANTED)
+            # --- Try to get lock
+            lock_client = client.LockClient(self.args.host, self.args.port, client_id=self.args.client_id)
+            try:
+                lock_client.connect()
+            except ConnectionRefusedError:
+                logger.error("Connection refused. Server: '%s:%s'", self.args.host, self.args.port)
+                sys.exit(ERR_CONNECTION_REFUSED)
+
+            granted = lock_client.lock(self.args.lock_name)
+            if not granted:
+                if tries:
+                    logger.info("Lock '%s' not granted. Still %s retries pending. Will retry in %s seconds...",
+                                self.args.lock_name, len(tries), self.args.retry_wait)
+                    time.sleep(self.args.retry_wait)
+                else:
+                    logger.info("Lock '%s' not granted. Exiting...", self.args.lock_name)
+                    sys.exit(ERR_LOCK_NOT_GRANTED)
 
         # --- Send keepalive from thread
         if self.args.keep_alive:
