@@ -2,11 +2,17 @@
 History
 =======
 
+
+0.1.5 (2018-06-26)
+------------------
+
+* FIX variable name used for building Docker image
+* change theme for docs
+
 0.1.4 (2018-06-26)
 ------------------
 
 * Implements retries for cli tnl_do
-
 
 0.1.3 (2018-06-22)
 ------------------
