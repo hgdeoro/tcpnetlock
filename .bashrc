@@ -61,7 +61,7 @@ function _tnl_release {
 	trap 'cowthink ooooops' ERR
 	set -x
 	_tnl_assert_clean
-	bumpversion ${TNL_BUMP:-patch}
+	git log -n1 | grep -q 'Bump version: ' || bumpversion ${TNL_BUMP:-patch}
 	make clean dist
 	VERSION=$(python setup.py --version)
 	twine upload -r pypitest dist/*
