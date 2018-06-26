@@ -82,6 +82,14 @@ class TestRunWithLock:
         completed_process = self._run(lock_name, lock_server, '--', 'vmstat', '1', '1')
         assert completed_process.returncode == tnl_do.ERR_LOCK_NOT_GRANTED
 
+    def test_cli_fails_lock_not_granted_with_retry(self, lock_server: ServerThread, lock_name: str):
+        lock_client = lock_server.get_client()
+        lock_client.connect()
+        assert lock_client.lock(lock_name)
+
+        completed_process = self._run(lock_name, lock_server, '--retry=2', '--retry-wait=1', '--', 'vmstat', '1', '1')
+        assert completed_process.returncode == tnl_do.ERR_LOCK_NOT_GRANTED
+
     def test_cli_fails_file_not_found(self, lock_server: ServerThread, lock_name: str):
         completed_process = self._run(lock_name, lock_server, '--', '/non/existing/binary', '1', '1')
         assert completed_process.returncode == tnl_do.ERR_FILE_NOT_FOUND
