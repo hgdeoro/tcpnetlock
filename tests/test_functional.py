@@ -8,7 +8,6 @@ import pytest
 from tcpnetlock import common
 from tcpnetlock import constants
 from tcpnetlock.client.client import LockClient
-from tcpnetlock.common import ClientDisconnected
 from .test_utils import BaseTest
 from .test_utils import ServerThread
 from .test_utils import lock_name

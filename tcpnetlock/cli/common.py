@@ -60,10 +60,10 @@ class PositiveInteger:
         int_value = int(value)
         if self.allow_zero:
             if int_value < 0:
-                 raise argparse.ArgumentTypeError("{value} is an invalid positive int value".format(value=int_value))
+                raise argparse.ArgumentTypeError("{value} is an invalid positive int value".format(value=int_value))
         else:
             if int_value <= 0:
-                 raise argparse.ArgumentTypeError("{value} is an invalid positive int value".format(value=int_value))
+                raise argparse.ArgumentTypeError("{value} is an invalid positive int value".format(value=int_value))
 
         return int_value
 

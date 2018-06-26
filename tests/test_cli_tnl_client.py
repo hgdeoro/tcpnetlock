@@ -4,8 +4,6 @@ Tests for `tcpnetlock.cli.tnl_client` package.
 import subprocess
 import uuid
 
-import pytest
-
 from tcpnetlock.cli import tnl_client
 from tests.test_utils import ServerThread
 from .test_utils import BaseTest
