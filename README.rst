@@ -21,10 +21,13 @@ TcpNetLock
 
 
 Network lock based on TCP sockets
+---------------------------------
 
 
 * Free software: GNU General Public License v3
-* Documentation: https://tcpnetlock.readthedocs.io.
+* Documentation: https://tcpnetlock.readthedocs.io/
+* GitHub: https://github.com/hgdeoro/tcpnetlock/
+* Docker: https://hub.docker.com/r/hgdeoro/tcpnetlock/
 
 
 Why?
@@ -34,8 +37,8 @@ While deploying applications to Kubernetes, I needed a way to make sure that
 some potential concurrent, distributed actions, are not executed concurrently.
 For example:
 
- * database migrations: just one Pod in the Kubernetes cluster should be able to apply the database migrations
- * for batch jobs, different workers could be working on the same resource, this can be avoided with this lock mechanism
+* **database migrations**: just one Pod in the Kubernetes cluster should be able to apply the database migrations
+* for **batch jobs**, different workers could be working on the same resource, this can be avoided with this lock mechanism
 
 Of course, Zookeeper is a MUCH BETTER solution, but that's too much for my use cases...
 
