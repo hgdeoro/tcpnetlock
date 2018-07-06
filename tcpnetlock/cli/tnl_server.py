@@ -1,6 +1,7 @@
 import logging
 import sys
 
+from tcpnetlock import __version__ as tcpnetlock_version
 from tcpnetlock.server import server
 from tcpnetlock.cli import common
 
@@ -17,8 +18,12 @@ class Main(common.BaseMain):
         self.parser.add_argument("--listen", default='localhost')
         self.parser.add_argument("--port", default=server.TCPServer.DEFAULT_PORT, type=int)
 
+    @property
+    def version(self):
+        return tcpnetlock_version
+
     def main(self):
-        logger.info("Started server listening on %s:%s", self.args.listen, self.args.port)
+        logger.info("Started server v%s listening on %s:%s", self.version, self.args.listen, self.args.port)
         try:
             lock_server = server.TCPServer(self.args.listen, self.args.port)
         except BaseException as err:
