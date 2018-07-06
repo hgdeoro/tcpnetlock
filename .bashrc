@@ -108,7 +108,7 @@ function _tnl_docker_build {
         docker build \
 		--build-arg TNL_VERSION=v${VERSION} \
             	-f docker/Dockerfile docker/ \
-            	-t hgdeoro/tcpnetlock:v${VERSION} \
+            	-t hgdeoro/tcpnetlock:${VERSION} \
             	-t hgdeoro/tcpnetlock:latest
 )
 }
