@@ -1,4 +1,5 @@
-# You need to pass $_TNL_VERSION value (usually it will be $TAG_NAME)
+# You need to pass $_TNL_VERSION value.
+# You can use $TAG_NAME, but it will have the form 'vX.Y.Z' instead of just 'X.Y.Z'
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [
