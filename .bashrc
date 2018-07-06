@@ -106,7 +106,7 @@ function _tnl_docker_build {
 	trap 'cowthink ooooops' ERR
 	VERSION=$(python setup.py --version)
         docker build \
-		--build-arg TNL_VERSION=v${VERSION} \
+		--build-arg TNL_VERSION=${VERSION} \
 		--cache-from hgdeoro/tcpnetlock:latest \
             	-f docker/Dockerfile docker/ \
             	-t hgdeoro/tcpnetlock:${VERSION} \
