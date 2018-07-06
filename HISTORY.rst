@@ -3,6 +3,12 @@ History
 =======
 
 
+0.1.6 (2018-07-06)
+------------------
+
+* FIX tag used in Docker image
+* log server version when starting
+
 0.1.5 (2018-06-26)
 ------------------
 
