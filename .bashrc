@@ -107,6 +107,7 @@ function _tnl_docker_build {
 	VERSION=$(python setup.py --version)
         docker build \
 		--build-arg TNL_VERSION=v${VERSION} \
+		--cache-from hgdeoro/tcpnetlock:latest \
             	-f docker/Dockerfile docker/ \
             	-t hgdeoro/tcpnetlock:${VERSION} \
             	-t hgdeoro/tcpnetlock:latest
