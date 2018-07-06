@@ -140,6 +140,7 @@ function tnl {
 		pre-release) _tnl_pre_release ;;
 		release) _tnl_release ;;
 		upload) _tnl_upload ;;
+		docker-run) docker run --rm -ti --name tcpnetlock-latest --publish 7666:7654 hgdeoro/tcpnetlock:latest $* ;;
 		docker-build) _tnl_docker_build ;;
 		docker-push) _tnl_docker_push ;;
 		*)
@@ -153,4 +154,4 @@ function tnl {
 }
 
 # 'release' and 'upload' are NOT autocompleted to avoid potential erroneous execution
-complete -W "server client do test lint test-lint coverage pre-release docker-build" tnl
+complete -W "server client do test lint test-lint coverage docker-run pre-release docker-build" tnl
