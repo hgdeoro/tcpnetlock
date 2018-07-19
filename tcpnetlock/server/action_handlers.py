@@ -62,7 +62,7 @@ class StatsActionHandler(ActionHandler):
     def handle_action(self):
         try:
             maxrss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        except:
+        except:  # noqa: E722 we need to ignore any error
             logger.warning("resource.getrusage() failed", exc_info=True)
             maxrss = 'n/a'
 
