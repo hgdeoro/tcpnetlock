@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 
-from tcpnetlock.server.context import _Context
+from tcpnetlock.server.context import Context
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class BackgroundThread(threading.Thread):
     iteration_wait = 5
     min_age = 5
 
-    def __init__(self, context: _Context, *args, **kwargs):
+    def __init__(self, context: Context, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._context = context
 

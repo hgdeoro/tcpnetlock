@@ -6,7 +6,7 @@ from tcpnetlock.common import Counter
 from tcpnetlock.server.lock import Lock
 
 
-class _Context:
+class Context:
 
     def __init__(self):
         self._global_lock = threading.Lock()

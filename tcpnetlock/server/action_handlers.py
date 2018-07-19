@@ -6,7 +6,7 @@ from tcpnetlock import constants as const
 from tcpnetlock.common import ClientDisconnected
 from tcpnetlock.protocol import Protocol
 from tcpnetlock.server.action import Action
-from tcpnetlock.server.context import _Context
+from tcpnetlock.server.context import Context
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class StatsActionHandler(ActionHandler):
         self._context = self.__pop_context(kwargs)
         super().__init__(*args, **kwargs)
 
-    def __pop_context(self, kwargs) -> _Context:
+    def __pop_context(self, kwargs) -> Context:
         return kwargs.pop('context')
 
     def _get_maxrss(self):

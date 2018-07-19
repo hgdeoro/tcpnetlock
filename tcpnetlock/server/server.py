@@ -7,7 +7,7 @@ from tcpnetlock.protocol import Protocol
 from tcpnetlock.server import action_handlers as handlers
 from tcpnetlock.server.action import Action
 from tcpnetlock.server.background_thread import BackgroundThread
-from tcpnetlock.server.context import _Context
+from tcpnetlock.server.context import Context
 
 """
 This implement a very simple network lock server based on just TCP.
@@ -43,7 +43,7 @@ class TCPServer(socketserver.ThreadingTCPServer):
 
     def __init__(self, host='localhost', port=DEFAULT_PORT):
         super().__init__((host, port), TCPHandler)
-        self._context = _Context()
+        self._context = Context()
         self._background_thread = BackgroundThread(self._context)
 
     @property
@@ -66,7 +66,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self.request.close()
 
     @property
-    def _context(self) -> _Context:
+    def _context(self) -> Context:
         return self.server._context
 
     def handle(self):
