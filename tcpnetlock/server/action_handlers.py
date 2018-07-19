@@ -1,6 +1,7 @@
 import json
 import logging
 import resource
+import typing
 
 from tcpnetlock import constants as const
 from tcpnetlock.common import ClientDisconnected
@@ -56,20 +57,25 @@ class PingActionHandler(ActionHandler):
 class StatsActionHandler(ActionHandler):
 
     def __init__(self, *args, **kwargs):
-        self.lock_dict = kwargs.pop('lock_dict')
+        self.context = self.__context(kwargs)
         super().__init__(*args, **kwargs)
 
-    def handle_action(self):
+    def __context(self, kwargs) -> typing.Type['tcpnetlock.server.server.Context']:
+        return kwargs.pop('context')
+
+    def get_maxrss(self):
         try:
-            maxrss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         except:  # noqa: E722 we need to ignore any error
             logger.warning("resource.getrusage() failed", exc_info=True)
-            maxrss = 'n/a'
+            return 'n/a'
 
+    def handle_action(self):
         stats = {
-            'lock_count': len(self.lock_dict),
-            'maxrss': maxrss,
+            'lock_count': len(self.context.LOCKS),
+            'maxrss': self.get_maxrss(),
         }
+        stats.update(self.context.counters())
         self.protocol.send(json.dumps(stats))
         self.protocol.close()
 

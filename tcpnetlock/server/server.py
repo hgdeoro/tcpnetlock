@@ -5,6 +5,7 @@ import threading
 import time
 
 from tcpnetlock import constants as const
+from tcpnetlock.common import Counter
 from tcpnetlock.common import ClientDisconnected
 from tcpnetlock.protocol import Protocol
 from tcpnetlock.server import action_handlers as handlers
@@ -65,6 +66,32 @@ class Lock:
             name=self._name, client=self._client_id or '', age=int(time.time() - self._timestamp))
 
 
+class Context:
+
+    GLOBAL_LOCK = threading.Lock()
+    """Global lock to serialize modification of LOCKS"""
+
+    LOCKS = collections.defaultdict(Lock)
+    """This dict contains the Lock instances"""
+
+    REQUESTS_COUNT = Counter()
+    """How many requests were accepted"""
+
+    LOCK_ACKQUIRED_COUNT = Counter()
+    """How many times a lock was acquired"""
+
+    LOCK_NOT_ACKQUIRED_COUNT = Counter()
+    """How many times a lock was NOT acquired"""
+
+    @classmethod
+    def counters(cls):
+        return {
+            'request_count': cls.REQUESTS_COUNT.count,
+            'lock_acquired_count': cls.LOCK_ACKQUIRED_COUNT.count,
+            'lock_not_acquired_count': cls.LOCK_NOT_ACKQUIRED_COUNT.count,
+        }
+
+
 class TCPServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
@@ -80,12 +107,6 @@ class TCPServer(socketserver.ThreadingTCPServer):
 
 class TCPHandler(socketserver.BaseRequestHandler):
 
-    GLOBAL_LOCK = threading.Lock()
-    """Global lock to serialize modification of LOCKS"""
-
-    LOCKS = collections.defaultdict(Lock)
-    """This dict contains the Lock instances"""
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -95,6 +116,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         self.request.close()
 
     def handle(self):
+        Context.REQUESTS_COUNT.incr()
         protocol = Protocol(self.request)
         try:
             line = protocol.readline()
@@ -116,7 +138,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             return handlers.PingActionHandler(protocol, action).handle_action()
 
         if action.name == const.ACTION_STATS:
-            return handlers.StatsActionHandler(protocol, action, lock_dict=self.LOCKS).handle_action()
+            return handlers.StatsActionHandler(protocol, action, context=Context).handle_action()
 
         if action.name != const.ACTION_LOCK:
             return handlers.InvalidActionActionHandler(protocol, action).handle_action()
@@ -127,16 +149,18 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
         # Get the Lock, only while holding the GLOBAL LOCK
         # This is done to avoid 2 concurrent clients creating 2 instances of the same lock at the same time
-        with self.GLOBAL_LOCK:
-            lock = self.LOCKS[lock_name]
+        with Context.GLOBAL_LOCK:
+            lock = Context.LOCKS[lock_name]
 
         # Acquire lock and proceed, or return failure.
         # If multiple concurrent clients try to get the lock, only one will proceed
         if lock.acquire_non_blocking():
+            Context.LOCK_ACKQUIRED_COUNT.incr()
             try:
                 return handlers.LockGrantedActionHandler(
                     protocol, action, lock=lock, lock_name=lock_name).handle_action()
             finally:
                 lock.release()
         else:
+            Context.LOCK_NOT_ACKQUIRED_COUNT.incr()
             return handlers.LockNotGrantedActionHandler(protocol, action, lock_name=lock_name).handle_action()

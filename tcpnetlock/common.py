@@ -54,3 +54,19 @@ class Utils:
 
         if not tcpnetlock.constants.VALID_CLIENT_ID_RE.match(client_id):
             raise InvalidClientIdError("The provided client-id is not valid")
+
+
+class Counter:
+    """Counter, just that.
+    We don't care about atomicity.
+    """
+
+    def __init__(self):
+        self._count = 0
+
+    @property
+    def count(self):
+        return self._count
+
+    def incr(self):
+        self._count += 1
