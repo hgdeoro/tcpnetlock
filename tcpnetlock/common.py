@@ -1,17 +1,15 @@
-import functools
-
 import tcpnetlock.constants
 
 
-def ignore_client_disconnected_exception(f):
-    """Swallows ClientDisconnected. Use this in method that can receive this exception but can safely ignore it"""
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except ClientDisconnected:
-            pass
-    return wrapper
+# def ignore_client_disconnected_exception(f):
+#     """Swallows ClientDisconnected. Use this in method that can receive this exception but can safely ignore it"""
+#     @functools.wraps(f)
+#     def wrapper(*args, **kwargs):
+#         try:
+#             return f(*args, **kwargs)
+#         except ClientDisconnected:
+#             pass
+#     return wrapper
 
 
 class TcpNetLockException(Exception):
