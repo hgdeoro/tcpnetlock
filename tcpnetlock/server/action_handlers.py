@@ -63,7 +63,7 @@ class StatsActionHandler(ActionHandler):
     def __context(self, kwargs) -> typing.Type['tcpnetlock.server.server.Context']:
         return kwargs.pop('context')
 
-    def get_maxrss(self):
+    def _get_maxrss(self):
         try:
             return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         except:  # noqa: E722 we need to ignore any error
@@ -73,7 +73,7 @@ class StatsActionHandler(ActionHandler):
     def handle_action(self):
         stats = {
             'lock_count': len(self.context.LOCKS),
-            'maxrss': self.get_maxrss(),
+            'maxrss': self._get_maxrss(),
         }
         stats.update(self.context.counters())
         self.protocol.send(json.dumps(stats))
