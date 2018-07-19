@@ -29,6 +29,9 @@ class BackgroundThread(threading.Thread):
             except:  # noqa: E722 we need to ignore any error
                 logger.exception("Exception detected in BackgroundThread while checking key '%s'", key)
         logger.info("Cleaning finished")
+        self._wait()
+
+    def _wait(self):
         time.sleep(self.iteration_wait)
 
     def _get_keys(self):
