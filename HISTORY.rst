@@ -3,6 +3,12 @@ History
 =======
 
 
+0.1.7 (2018-07-19)
+------------------
+
+* log release of lock causde by client disconnecting
+
+
 0.1.6 (2018-07-06)
 ------------------
 

@@ -5,10 +5,10 @@ import threading
 import time
 
 from tcpnetlock import constants as const
+from tcpnetlock.common import ClientDisconnected
 from tcpnetlock.protocol import Protocol
 from tcpnetlock.server import action_handlers as handlers
 from tcpnetlock.server.action import Action
-from tcpnetlock.common import ClientDisconnected
 
 """
 This implement a very simple network lock server based on just TCP.

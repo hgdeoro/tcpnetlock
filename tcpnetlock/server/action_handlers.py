@@ -1,9 +1,9 @@
 import logging
 
 from tcpnetlock import constants as const
-from tcpnetlock.server.action import Action
+from tcpnetlock.common import ClientDisconnected
 from tcpnetlock.protocol import Protocol
-from tcpnetlock.common import ignore_client_disconnected_exception
+from tcpnetlock.server.action import Action
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +87,13 @@ class LockGrantedActionHandler(ActionHandler):
         super().__init__(*args, **kwargs)
         self.client_id = self.action.params.get('client-id')
 
-    @ignore_client_disconnected_exception
     def handle_action(self):
+        try:
+            self._handle_action()
+        except ClientDisconnected:
+            logger.info("ClientDisconnected: lock will be released: %s", self.lock)
+
+    def _handle_action(self):
         self.lock.update(self.lock_name, self.client_id)
         self.protocol.send(const.RESPONSE_OK)
         logger.info("Lock granted: %s", self.lock)
