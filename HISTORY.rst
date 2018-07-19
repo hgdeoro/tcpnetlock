@@ -6,8 +6,10 @@ History
 0.1.7 (2018-07-19)
 ------------------
 
-* log release of lock causde by client disconnecting
-* add .stats action
+* Log release of lock causde by client disconnecting
+* Add .stats action
+* Add background thread to cleanup old locks
+* Remove global server state hold on Context class
 
 
 0.1.6 (2018-07-06)
@@ -20,7 +22,7 @@ History
 ------------------
 
 * FIX variable name used for building Docker image
-* change theme for docs
+* Change theme for docs
 
 0.1.4 (2018-06-26)
 ------------------
