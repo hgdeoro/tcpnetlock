@@ -6,7 +6,7 @@ from tcpnetlock.common import ClientDisconnected
 from tcpnetlock.protocol import Protocol
 from tcpnetlock.server import action_handlers as handlers
 from tcpnetlock.server.action import Action
-from tcpnetlock.server.background_thread import BackgrounThread
+from tcpnetlock.server.background_thread import BackgroundThread
 from tcpnetlock.server.context import Context
 
 """
@@ -43,7 +43,7 @@ class TCPServer(socketserver.ThreadingTCPServer):
 
     def __init__(self, host='localhost', port=DEFAULT_PORT):
         super().__init__((host, port), TCPHandler)
-        self._background_thread = BackgrounThread()
+        self._background_thread = BackgroundThread()
 
     @property
     def port(self):

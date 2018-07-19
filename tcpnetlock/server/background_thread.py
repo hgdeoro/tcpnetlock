@@ -8,11 +8,11 @@ from tcpnetlock.server.context import Context
 # logger = logging.getLogger(__name__)
 
 
-class BackgrounThread(threading.Thread):
+class BackgroundThread(threading.Thread):
     daemon = True
     iteration_wait = 5
     min_age = 5
-    logger = logging.getLogger("{}.BackgrounThread".format(__name__))
+    logger = logging.getLogger("{}.BackgroundThread".format(__name__))
 
     def run(self):
         while True:
@@ -21,7 +21,7 @@ class BackgrounThread(threading.Thread):
                 try:
                     self._check_key(key)
                 except:  # noqa: E722 we need to ignore any error
-                    self.logger.exception("Exception detected in BackgrounThread while checking key '%s'", key)
+                    self.logger.exception("Exception detected in BackgroundThread while checking key '%s'", key)
             time.sleep(self.iteration_wait)
 
     def _get_keys(self):
