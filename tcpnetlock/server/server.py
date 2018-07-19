@@ -7,7 +7,7 @@ from tcpnetlock.protocol import Protocol
 from tcpnetlock.server import action_handlers as handlers
 from tcpnetlock.server.action import Action
 from tcpnetlock.server.background_thread import BackgroundThread
-from tcpnetlock.server.context import Context
+from tcpnetlock.server.context import _Context
 
 """
 This implement a very simple network lock server based on just TCP.
@@ -43,7 +43,8 @@ class TCPServer(socketserver.ThreadingTCPServer):
 
     def __init__(self, host='localhost', port=DEFAULT_PORT):
         super().__init__((host, port), TCPHandler)
-        self._background_thread = BackgroundThread()
+        self._context = _Context()
+        self._background_thread = BackgroundThread(self._context)
 
     @property
     def port(self):
@@ -64,8 +65,12 @@ class TCPHandler(socketserver.BaseRequestHandler):
         protocol.send(const.RESPONSE_INVALID_REQUEST)
         self.request.close()
 
+    @property
+    def _context(self) -> _Context:
+        return self.server._context
+
     def handle(self):
-        Context.REQUESTS_COUNT.incr()
+        self._context.requests_count.incr()
         protocol = Protocol(self.request)
         try:
             line = protocol.readline()
@@ -87,7 +92,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
             return handlers.PingActionHandler(protocol, action).handle_action()
 
         if action.name == const.ACTION_STATS:
-            return handlers.StatsActionHandler(protocol, action, context=Context).handle_action()
+            return handlers.StatsActionHandler(protocol, action, context=self._context).handle_action()
 
         if action.name != const.ACTION_LOCK:
             return handlers.InvalidActionActionHandler(protocol, action).handle_action()
@@ -98,18 +103,18 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
         # Get the Lock, only while holding the GLOBAL LOCK
         # This is done to avoid 2 concurrent clients creating 2 instances of the same lock at the same time
-        with Context.GLOBAL_LOCK:
-            lock = Context.LOCKS[lock_name]
+        with self._context.global_lock:
+            lock = self._context.locks[lock_name]
 
         # Acquire lock and proceed, or return failure.
         # If multiple concurrent clients try to get the lock, only one will proceed
         if lock.acquire_non_blocking():
-            Context.LOCK_ACKQUIRED_COUNT.incr()
+            self._context.lock_acquired_count.incr()
             try:
                 return handlers.LockGrantedActionHandler(
                     protocol, action, lock=lock, lock_name=lock_name).handle_action()
             finally:
                 lock.release()
         else:
-            Context.LOCK_NOT_ACKQUIRED_COUNT.incr()
+            self._context.lock_not_acquired_count.incr()
             return handlers.LockNotGrantedActionHandler(protocol, action, lock_name=lock_name).handle_action()

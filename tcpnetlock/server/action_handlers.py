@@ -1,12 +1,12 @@
 import json
 import logging
 import resource
-import typing
 
 from tcpnetlock import constants as const
 from tcpnetlock.common import ClientDisconnected
 from tcpnetlock.protocol import Protocol
 from tcpnetlock.server.action import Action
+from tcpnetlock.server.context import _Context
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +57,10 @@ class PingActionHandler(ActionHandler):
 class StatsActionHandler(ActionHandler):
 
     def __init__(self, *args, **kwargs):
-        self.context = self.__context(kwargs)
+        self._context = self.__pop_context(kwargs)
         super().__init__(*args, **kwargs)
 
-    def __context(self, kwargs) -> typing.Type['tcpnetlock.server.server.Context']:
+    def __pop_context(self, kwargs) -> _Context:
         return kwargs.pop('context')
 
     def _get_maxrss(self):
@@ -72,10 +72,10 @@ class StatsActionHandler(ActionHandler):
 
     def handle_action(self):
         stats = {
-            'lock_count': len(self.context.LOCKS),
+            'lock_count': len(self._context.locks),
             'maxrss': self._get_maxrss(),
         }
-        stats.update(self.context.counters())
+        stats.update(self._context.counters())
         self.protocol.send(json.dumps(stats))
         self.protocol.close()
 

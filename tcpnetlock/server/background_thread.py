@@ -2,16 +2,20 @@ import logging
 import threading
 import time
 
-from tcpnetlock.server.context import Context
-
+from tcpnetlock.server.context import _Context
 
 logger = logging.getLogger(__name__)
 
 
 class BackgroundThread(threading.Thread):
+
     daemon = True
     iteration_wait = 5
     min_age = 5
+
+    def __init__(self, context: _Context, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._context = context
 
     def run(self):
         while True:
@@ -40,11 +44,11 @@ class BackgroundThread(threading.Thread):
         # we must be sure that the iteration done in the code do not prevents the main server modify LOCKS,
         # and that there is NO way that our iteration could generate any inconvenience there.
 
-        with Context.GLOBAL_LOCK:
-            return list(Context.LOCKS.keys())
+        with self._context.global_lock:
+            return list(self._context.locks.keys())
 
     def _check_key(self, key):
-        lock = Context.LOCKS[key]
+        lock = self._context.locks[key]
         if lock.locked:
             return
         if lock.age < self.min_age:
@@ -59,7 +63,7 @@ class BackgroundThread(threading.Thread):
                 return
 
             logger.info("Cleaning up key '%s'", key)
-            del Context.LOCKS[key]
+            del self._context.locks[key]
 
         finally:
             if ackquired:
