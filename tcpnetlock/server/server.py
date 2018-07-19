@@ -115,6 +115,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
         if action.name == const.ACTION_PING:
             return handlers.PingActionHandler(protocol, action).handle_action()
 
+        if action.name == const.ACTION_STATS:
+            return handlers.StatsActionHandler(protocol, action, lock_dict=self.LOCKS).handle_action()
+
         if action.name != const.ACTION_LOCK:
             return handlers.InvalidActionActionHandler(protocol, action).handle_action()
 

@@ -1,6 +1,7 @@
 """
 Tests for `tcpnetlock.client` and `tcpnetlock.server` packages.
 """
+import json
 import uuid
 
 import pytest
@@ -254,3 +255,15 @@ class TestProtocol(BaseTest):
     #
     #     with pytest.raises(ClientDisconnected):
     #         client.check_connection()
+
+
+class TestStatus(BaseTest):
+
+    def test_server_serves_stats(self, lock_server):
+        client = lock_server.get_client()
+        client.connect()
+        client._protocol.send('.stats')
+        line = client._protocol.readline()
+        stats = json.loads(line)
+        assert 'lock_count' in stats
+        assert 'maxrss' in stats

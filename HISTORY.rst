@@ -7,6 +7,7 @@ History
 ------------------
 
 * log release of lock causde by client disconnecting
+* add .stats action
 
 
 0.1.6 (2018-07-06)

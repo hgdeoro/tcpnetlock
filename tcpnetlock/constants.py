@@ -15,6 +15,7 @@ ACTION_RELEASE = 'release'
 ACTION_SERVER_SHUTDOWN = '.server-shutdown'
 ACTION_PING = '.ping'
 ACTION_KEEPALIVE = '.keepalive'
+ACTION_STATS = '.stats'
 
 VALID_LOCK_NAME_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
 VALID_CLIENT_ID_RE = re.compile(r'^[a-zA-Z0-9\.@_-]+$')

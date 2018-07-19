@@ -1,4 +1,6 @@
+import json
 import logging
+import resource
 
 from tcpnetlock import constants as const
 from tcpnetlock.common import ClientDisconnected
@@ -11,6 +13,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     'ShutdownActionHandler',
     'PingActionHandler',
+    'StatsActionHandler',
     'InvalidLockActionHandler',
     'LockNotGrantedActionHandler',
     'LockGrantedActionHandler',
@@ -47,6 +50,27 @@ class PingActionHandler(ActionHandler):
 
     def handle_action(self):
         self.protocol.send(const.RESPONSE_PONG)
+        self.protocol.close()
+
+
+class StatsActionHandler(ActionHandler):
+
+    def __init__(self, *args, **kwargs):
+        self.lock_dict = kwargs.pop('lock_dict')
+        super().__init__(*args, **kwargs)
+
+    def handle_action(self):
+        try:
+            maxrss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        except:
+            logger.warning("resource.getrusage() failed", exc_info=True)
+            maxrss = 'n/a'
+
+        stats = {
+            'lock_count': len(self.lock_dict),
+            'maxrss': maxrss,
+        }
+        self.protocol.send(json.dumps(stats))
         self.protocol.close()
 
 
