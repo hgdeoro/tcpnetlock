@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 import time
 
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 class BackgroundThread(threading.Thread):
 
     daemon = True
-    iteration_wait = 5
+    iteration_wait = int(os.environ.get('TCPNETLOCK_BACKGROUND_THREAD_PERIOD', '10'))
     min_age = 5
 
     def __init__(self, context: Context, *args, **kwargs):
@@ -18,6 +19,7 @@ class BackgroundThread(threading.Thread):
         self._context = context
 
     def run(self):
+        logger.info("Starting %s. iteration_wait: %s", self.__class__.__name__, self.iteration_wait)
         while True:
             self.cleanup_old_locks()
 
