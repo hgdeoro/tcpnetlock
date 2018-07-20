@@ -8,6 +8,7 @@ RESPONSE_LOCK_NOT_GRANTED = 'not-granted'
 RESPONSE_RELEASED = 'released'
 RESPONSE_SHUTTING_DOWN = 'shutting-down'
 RESPONSE_PONG = 'pong'
+RESPONSE_STATS_COMING = 'stats'
 RESPONSE_STILL_ALIVE = 'alive'
 
 ACTION_LOCK = 'lock'

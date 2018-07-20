@@ -3,7 +3,7 @@ import socket
 
 from tcpnetlock import common
 from tcpnetlock import constants
-from tcpnetlock.client.action import AcquireLockClientAction
+from tcpnetlock.client.action import AcquireLockClientAction, GetStatsClientAction
 from tcpnetlock.client.action import ClientAction
 from tcpnetlock.common import Utils
 from tcpnetlock.protocol import Protocol
@@ -73,6 +73,12 @@ class LockClient:
         return ClientAction(self._protocol,
                             constants.ACTION_PING,
                             [constants.RESPONSE_PONG]).handle()
+
+    def stats(self):
+        """Get stats from server"""
+        return GetStatsClientAction(self._protocol,
+                                    constants.ACTION_STATS,
+                                    constants.RESPONSE_STATS_COMING).handle()
 
     def keepalive(self):
         """Send a keepalive to the server"""

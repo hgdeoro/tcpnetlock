@@ -9,6 +9,7 @@ import pytest
 from tcpnetlock import common
 from tcpnetlock import constants
 from tcpnetlock.client.client import LockClient
+from tcpnetlock.server.server import TCPServer
 from .test_utils import BaseTest
 from .test_utils import ServerThread
 from .test_utils import lock_name
@@ -257,13 +258,17 @@ class TestProtocol(BaseTest):
     #         client.check_connection()
 
 
-class TestStatus(BaseTest):
+class TestGetStats(BaseTest):
 
-    def test_server_serves_stats(self, lock_server):
+    def test_server_serves_stats(self, lock_server: ServerThread):
         client = lock_server.get_client()
         client.connect()
-        client._protocol.send('.stats')
-        line = client._protocol.readline()
-        stats = json.loads(line)
+        _, stats = client.stats()
+        assert stats is not None
+        assert isinstance(stats, dict)
+
+        assert 'requests_count' in stats
+        assert 'lock_acquired_count' in stats
         assert 'lock_count' in stats
+        assert 'lock_not_acquired_count' in stats
         assert 'maxrss' in stats

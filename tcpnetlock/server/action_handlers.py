@@ -76,7 +76,7 @@ class StatsActionHandler(ActionHandler):
             'maxrss': self._get_maxrss(),
         }
         stats.update(self._context.counters())
-        self.protocol.send(json.dumps(stats))
+        self.protocol.send("{},{}".format(const.RESPONSE_STATS_COMING, json.dumps(stats)))
         self.protocol.close()
 
 

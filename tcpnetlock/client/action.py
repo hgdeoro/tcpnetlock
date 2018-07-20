@@ -1,3 +1,4 @@
+import json
 import logging
 
 from tcpnetlock.protocol import Protocol
@@ -53,3 +54,17 @@ class AcquireLockClientAction(ClientAction):
         if client_id:
             message += ",client-id:{client_id}".format(client_id=client_id)
         return message
+
+
+class GetStatsClientAction(ClientAction):
+
+    def parse_and_validate_response(self, line: str):
+        response_code, json_encoded_dict = line.split(",", maxsplit=1)
+        assert response_code in self.valid_responses,\
+            "Invalid response: '{response_code}'. Valid responses: {valid_response_codes}. Full line: {line}".format(
+                response_code=response_code,
+                valid_response_codes=self.valid_responses,
+                line=line
+            )
+        stats = json.loads(json_encoded_dict)
+        return response_code, stats
