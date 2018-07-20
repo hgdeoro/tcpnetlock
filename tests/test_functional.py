@@ -284,7 +284,7 @@ class TestBackgroundThread(BaseTest):
         client.release()
 
         # Now wait until lock is cleaned up
-        for _ in range(50):
+        for _ in range(150):
             if lock_name not in lock_server.server._context._locks:
                 break
             time.sleep(0.1)
