@@ -12,7 +12,6 @@ class BackgroundThread(threading.Thread):
 
     daemon = True
     iteration_wait = int(os.environ.get('TCPNETLOCK_BACKGROUND_THREAD_PERIOD', '10'))
-    min_age = 5
 
     def __init__(self, context: Context, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,9 +55,9 @@ class BackgroundThread(threading.Thread):
         lock = self._context.locks[key]
         if lock.locked:
             return
-        if lock.age < self.min_age:
-            # Here we're evaluating the lock grant age, so, not sure if this makes sense
-            return
+        # if lock.age < self.min_age:
+        #     # Here we're evaluating the lock grant age, so, not sure if this makes sense
+        #     return
 
         ackquired = False
         try:

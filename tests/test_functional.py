@@ -1,7 +1,7 @@
 """
 Tests for `tcpnetlock.client` and `tcpnetlock.server` packages.
 """
-import json
+import time
 import uuid
 
 import pytest
@@ -9,7 +9,6 @@ import pytest
 from tcpnetlock import common
 from tcpnetlock import constants
 from tcpnetlock.client.client import LockClient
-from tcpnetlock.server.server import TCPServer
 from .test_utils import BaseTest
 from .test_utils import ServerThread
 from .test_utils import lock_name
@@ -272,3 +271,21 @@ class TestGetStats(BaseTest):
         assert 'lock_count' in stats
         assert 'lock_not_acquired_count' in stats
         assert 'maxrss' in stats
+
+
+class TestBackgroundThread(BaseTest):
+
+    def test_background_task_cleanups(self, lock_server: ServerThread, lock_name):
+        client = lock_server.get_client()
+        client.connect()
+        assert lock_name not in lock_server.server._context._locks
+        assert client.lock(lock_name)
+        assert lock_name in lock_server.server._context._locks
+        client.release()
+
+        # Now wait until lock is cleaned up
+        for _ in range(50):
+            if lock_name not in lock_server.server._context._locks:
+                break
+            time.sleep(0.1)
+        assert lock_name not in lock_server.server._context._locks, "Lock was NOT cleaned up"

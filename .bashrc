@@ -124,6 +124,7 @@ function _tnl_docker_push {
 }
 
 
+export TCPNETLOCK_BACKGROUND_THREAD_PERIOD=5
 
 function tnl {
 	op=$1
@@ -133,12 +134,12 @@ function tnl {
 		s|server) python -m tcpnetlock.cli.tnl_server --debug $* ;; # run the server
 		c|client) python -m tcpnetlock.cli.tnl_client --debug test-lock $* ;; # run the client
 		d|do) python -m tcpnetlock.cli.tnl_do --debug --lock-name test-lock $* ;; # run tnl_do
-		t|test) py.test -v $* ;;
+		t|test) env TCPNETLOCK_BACKGROUND_THREAD_PERIOD=1 py.test -v $* ;;
 		l|lint) make lint $* ;;
-		tl|test-lint) py.test -v $* && make lint && cowthink ok ;;
-		g|coverage) make coverage $* ;;
-		pre-release) _tnl_pre_release ;;
-		release) _tnl_release ;;
+		tl|test-lint) env TCPNETLOCK_BACKGROUND_THREAD_PERIOD=1 py.test -v $* && make lint && cowthink ok ;;
+		g|coverage) env TCPNETLOCK_BACKGROUND_THREAD_PERIOD=1 make coverage $* ;;
+		pre-release) TCPNETLOCK_BACKGROUND_THREAD_PERIOD=1 _tnl_pre_release ;;
+		release) TCPNETLOCK_BACKGROUND_THREAD_PERIOD=1 _tnl_release ;;
 		upload) _tnl_upload ;;
 		docker-run) docker run --rm -ti --name tcpnetlock-latest --publish 7666:7654 hgdeoro/tcpnetlock:latest $* ;;
 		docker-build) _tnl_docker_build ;;
