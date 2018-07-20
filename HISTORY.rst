@@ -2,6 +2,10 @@
 History
 =======
 
+0.1.8 (2018-07-19)
+------------------
+
+* Make period of cleanup configurable via environment variables
 
 0.1.7 (2018-07-19)
 ------------------
@@ -10,7 +14,6 @@ History
 * Add .stats action
 * Add background thread to cleanup old locks
 * Remove global server state hold on Context class
-
 
 0.1.6 (2018-07-06)
 ------------------
