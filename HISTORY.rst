@@ -2,12 +2,13 @@
 History
 =======
 
-0.1.8 (2018-07-19)
+0.1.8 (2018-07-20)
 ------------------
 
 * Make period of cleanup configurable via environment variables
 * FIX response for stats action
 * Add tests for background thread
+* Add client method to call the stats action
 
 0.1.7 (2018-07-19)
 ------------------
