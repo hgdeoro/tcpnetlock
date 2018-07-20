@@ -6,6 +6,8 @@ History
 ------------------
 
 * Make period of cleanup configurable via environment variables
+* FIX response for stats action
+* Add tests for background thread
 
 0.1.7 (2018-07-19)
 ------------------
